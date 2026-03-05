@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { PageProps } from './$types';
     import Navbar from '$lib/components/Navbar.svelte';
+  import { goto } from '$app/navigation';
     let { data }: PageProps = $props();
 </script>
 
@@ -16,7 +17,7 @@
                 This is where you can create a new Active Directory user. Fill out the form below to add a new user to your directory.
             </p>
             <div class="justify-end card-actions">
-            <button class="btn btn-primary">Add New User</button>
+            <button class="btn btn-primary" on:click={()=>{goto("/add-user")}}>Add New User</button>
             </div>
         </div>
         </div>
