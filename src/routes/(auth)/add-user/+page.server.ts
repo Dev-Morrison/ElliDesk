@@ -34,8 +34,7 @@ export const actions: Actions = {
         };
         console.log(params);
         try {
-            // throw new Error('This functionality is currently disabled for testing purposes');
-            // ldapAddUser(params);
+            ldapAddUser(params);
         } catch (error: any) {
             return fail(500, { success: false, message: 'Failed to add user: ' + error.message });
         }
