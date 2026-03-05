@@ -40,7 +40,7 @@ export const actions: Actions = {
         cookies.set('session', cookieValue, {
             path: '/',
             httpOnly: true,
-            secure: true,
+            secure: false,
             sameSite: 'strict'
         });
         return { success: true };
