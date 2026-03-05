@@ -1,6 +1,7 @@
 <script lang="ts">
+  import Navbar from '$lib/components/Navbar.svelte';
     import type { PageProps } from './$types';
-    let { form }: PageProps = $props();
+    let { data, form }: PageProps = $props();
 	let givenName = $state('');
 	let surname = $state('');
 	let username = $state('');
@@ -62,7 +63,7 @@
 <svelte:head>
     <title>Add User</title>
 </svelte:head>
-
+<Navbar username={data.user.username} />
 <div class="p-12 flex flex-col items-center">
     <h1 class="text-2xl font-bold my-10">Add New User</h1>
     <p class="text-center max-w-2xl">

@@ -14,10 +14,10 @@
         <div class="card-body bg-base-300 rounded mt-5">
             <h2 class="card-title">Create New Active Directory User</h2>
             <p>
-                This is where you can create a new Active Directory user. Fill out the form below to add a new user to your directory.
+                This is where you can create a new Active Directory user. Click the button below to get started.
             </p>
             <div class="justify-end card-actions">
-            <button class="btn btn-primary" on:click={()=>{goto("/add-user")}}>Add New User</button>
+            <button class="btn btn-primary" onclick={()=>{goto("/add-user")}}>Add New User</button>
             </div>
         </div>
         </div>

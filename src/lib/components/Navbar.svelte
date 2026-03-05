@@ -5,7 +5,7 @@
 
 <div class="navbar bg-base-100 shadow-sm">
   <div class="flex-1">
-    <a class="btn btn-ghost text-xl">ElliDesk AD Manager</a>
+    <a class="btn btn-ghost text-xl" href="/dashboard">ElliDesk AD Manager</a>
   </div>
   <div class="flex-none">
     <ul class="menu menu-horizontal px-1">
