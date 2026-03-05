@@ -1,5 +1,3 @@
-// src/lib/config/adConfig.ts
-
 export const EntityBSJ = "OU=ENTITY - BSJ";
 export const DomainDN = "DC=BOS,DC=local";
 export const AllStaffGroup =

@@ -11,7 +11,7 @@ export async function ldapAuthenticate(username: string, password: string) {
     let userAuthenticated = false;
     try {
             await client.bind(env.LDAP_SERVICE_USER_DN, env.LDAP_SERVICE_PASSWORD);
-            const { searchEntries, searchReferences } = await client.search(env.LDAP_SEARCH_DN, {
+            const { searchEntries, searchReferences } = await client.search(env.LDAP_SEARCH_DN_ICT, {
                 filter: '(sAMAccountName=' + username + ')',
             });
             if (searchEntries.length === 0) {
