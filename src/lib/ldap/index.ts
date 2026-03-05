@@ -1,12 +1,10 @@
 import { Client, Change, type SearchOptions, Attribute } from 'ldapts';
+import type { LdapAddUserParams } from '$lib/types';
 import { env } from '$env/dynamic/private';
-const url = 'ldap://BOS.local:389';
-const bindDN = 'CN=Policy Test,OU=MIS_STAFF,OU=MIS,DC=BOS,DC=local';
-const bindPW = 'Password@101';
-const searchDN = 'DC=BOS,DC=local';
+
 
 const client = new Client({
-    url,
+    url: env.LDAP_URL,
 });
 
 export async function ldapAuthenticate(username: string, password: string) {
@@ -58,18 +56,7 @@ export async function ldapAuthenticate(username: string, password: string) {
 
 
 
-interface LdapAddUserParams {
-    displayName: string;
-    givenName: string;
-    surname: string;
-    samAccountName: string;
-    userPrincipalName: string;
-    password: string;
-    targetOU: string;
-    proxyAddresses: string[];
-    department: string;
-    baseDN: string;
-}
+
 
 export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success: boolean; message: string }> {
 
@@ -79,7 +66,7 @@ export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success:
         surname,
         samAccountName,
         userPrincipalName,
-        password,
+        groupDNs,
         targetOU,
         proxyAddresses,
         department,
@@ -126,35 +113,10 @@ export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success:
             userPrincipalName: userPrincipalName,
             department: department,
             proxyAddresses: proxyAddresses,
-            userAccountControl: '544' // Disabled
+            userAccountControl: '546' // Disabled + no password req
         });
 
-        // Set password (UTF-16LE quoted)
-        const quotedPassword = `"${password}"`;
-        const passwordBuffer = Buffer.from(quotedPassword, 'utf16le');
-
-        await client.modify(
-            userDN,
-            new Change({
-                operation: 'replace',
-                modification: new Attribute({
-                    type: 'unicodePwd',
-                    values: [passwordBuffer]
-                })
-            })
-        );
-        //Enable Account
-        await client.modify(
-            userDN,
-            new Change({
-                operation: 'replace',
-                modification: new Attribute({
-                    type: 'userAccountControl',
-                    values: ['512'] // Enabled
-                })
-            })
-        );
-        // Force password change at next login
+        //User must  change password at next login
         await client.modify(
             userDN,
             new Change({
@@ -165,6 +127,24 @@ export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success:
                 })
             })
         );
+        //Add user to groups
+        for (const groupDN of groupDNs) {
+		try {
+			const change = new Change({
+				operation: 'add',
+				modification: new Attribute({
+                    type: 'member',
+                    values: [userDN]
+                })
+			});
+
+			await client.modify(groupDN, change);
+
+			console.log(`Added ${userDN} to ${groupDN}`);
+		} catch (error) {
+			console.error(`Failed to add ${userDN} to ${groupDN}`, error);
+		}
+	}
 
         return {
             success: true,
@@ -182,4 +162,32 @@ export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success:
     } finally {
         await client.unbind();
     }
+}
+
+export async function ldapAddUserToGroups(
+	userDN: string,
+	groupDNs: string[],
+) {
+    console.log(groupDNs);
+    
+    client.bind(env.LDAP_SERVICE_USER_DN, env.LDAP_SERVICE_PASSWORD);
+	for (const groupDN of groupDNs) {
+		try {
+			const change = new Change({
+				operation: 'add',
+				modification: new Attribute({
+                    type: 'member',
+                    values: [userDN]
+                })
+			});
+
+			await client.modify(groupDN, change);
+
+			console.log(`Added ${userDN} to ${groupDN}`);
+		} catch (error) {
+			console.error(`Failed to add ${userDN} to ${groupDN}`, error);
+		} finally {
+            await client.unbind();
+        }
+	}
 }
