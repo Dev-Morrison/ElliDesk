@@ -6,5 +6,6 @@ export default defineConfig({
     plugins: [tailwindcss(), sveltekit()], 
     server: {
         port: 7777,
+        allowedHosts: ['heron']
     }
 });
