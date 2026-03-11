@@ -1,7 +1,7 @@
 export const EntityBSJ = "OU=ENTITY - BSJ";
 export const DomainDN = "DC=BOS,DC=local";
 export const AllStaffGroup =
-  "CN=All BSJ Staff,OU=GROUPS,OU=ENTITY - BSJ,DC=BOS,DC=local";
+  "CN=All BSJ Staff,OU=Distribution Groups,OU=GROUPS,OU=ENTITY - BSJ,DC=BOS,DC=local";
 
 export const AD_CONFIG = {
   domains: {
