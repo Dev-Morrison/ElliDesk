@@ -18,3 +18,18 @@ export interface LdapAddUserParams {
     baseDN: string;
     groupDNs: string[]; // Optional array of group DNs to add the user to
 }
+
+
+export interface ADUser {
+    dn: string;
+    cn: string;
+    displayName: string;
+    sAMAccountName: string;
+    mail?: string;
+    department?: string;
+
+    enabled: boolean;
+    locked: boolean;
+
+    lastLogon?: string;
+}

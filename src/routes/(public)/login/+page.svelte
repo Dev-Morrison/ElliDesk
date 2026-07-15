@@ -13,7 +13,7 @@
 	<title>Login</title>
 </svelte:head>
 <section
-	class="bg-gray-300 h-fit min-h-screen flex items-center justify-center w-full"
+	class="bg-base-100 h-fit min-h-screen flex items-center justify-center w-full"
 >
 	<div
 		class="w-full min-w-fit max-w-xl h-fit flex items-center flex-col space-y-5 my-32 mx-5 pt-10 pb-5 rounded-xl"
@@ -43,12 +43,12 @@
                 }
             }}
         >
-			<input type="text" name="username" placeholder="Username" class="rounded-md input input-neutral w-full" />
-            <input type="password" name="password" placeholder="Password" class="rounded-md input input-neutral w-full" />
+			<input type="text" name="username" placeholder="Username" class="rounded-md input input-primary w-full" />
+            <input type="password" name="password" placeholder="Password" class="rounded-md input input-primary w-full" />
 
 			<div class="flex justify-between items-center">
 				<p class="text-red-600 text-sm ml-0.5">{errorText}</p>
-                <button class="btn btn-soft btn-primary rounded-md">
+                <button class="btn btn-primary rounded-md">
                 {#if formProcessing }
                     <span class="loading loading-spinner"></span>
                 {/if}

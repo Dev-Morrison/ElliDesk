@@ -25,7 +25,7 @@ export const actions: Actions = {
             surname,
             samAccountName: username,
             userPrincipalName,
-            password: 'Password123', // In a real application, you would want to generate a secure password or allow the admin to set it
+            password: '', // In a real application, you would want to generate a secure password or allow the admin to set it
             targetOU: getOUForDepartment(domain, department),
             groupDNs: getGroupsForDepartment(domain, department),
             proxyAddresses: [`SMTP:${userPrincipalName}`],
