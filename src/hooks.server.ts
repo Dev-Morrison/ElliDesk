@@ -1,5 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { env } from '$env/dynamic/private';
 import type { SessionUser } from '$lib/types';
 
@@ -9,16 +9,24 @@ function sign(data: string) {
         .digest('hex');
 }
 
+// Plain !== leaks timing information byte-by-byte; a signature is a secret
+// derived value and should be compared in constant time.
+function signaturesMatch(a: string, b: string): boolean {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
     const cookie = event.cookies.get('session');
     if (!cookie) {
-        event.locals.user = null;     
+        event.locals.user = null;
         return resolve(event);
     }
 
     const [payload, signature] = cookie.split('.');
 
-    if (sign(payload) !== signature) {
+    if (!payload || !signature || !signaturesMatch(sign(payload), signature)) {
         event.locals.user = null;
         return resolve(event);
     }

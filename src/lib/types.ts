@@ -2,6 +2,7 @@ export interface SessionUser {
     username: string;
     email: string;
     name: string;
+    dn: string;
     createdAt: number;
 }
 

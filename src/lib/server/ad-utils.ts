@@ -1,24 +1,14 @@
-import { env } from '$env/dynamic/private';
-import { Client } from 'ldapts';
+import type { Client } from 'ldapts';
+import { getBoundClient, baseDN, toArray, toSingle, cnFromDN, ouFromDN } from '$lib/server/ldap';
 
 // --- Connection ----------------------------------------------------------
+// Generic client/attribute plumbing lives in $lib/server/ldap — re-exported
+// here so existing bulk-update imports don't need to change.
 
-export async function getADClient(): Promise<Client> {
-    const client = new Client({
-        url: env.LDAP_URL as string,
-    });
+export { toArray, toSingle, cnFromDN, ouFromDN };
 
-    await client.bind(
-        env.LDAP_SERVICE_USER_DN as string,
-        env.LDAP_SERVICE_PASSWORD as string
-    );
-
-    return client;
-}
-
-export function getBaseDN(): string {
-    return env.LDAP_BASE_DN as string;
-}
+export const getADClient = getBoundClient;
+export const getBaseDN = baseDN;
 
 // --- Safety guardrails -----------------------------------------------------
 // Accounts belonging to any of these groups are excluded from bulk operations,
@@ -51,31 +41,8 @@ export function isBulkEditableAttribute(attr: string): attr is BulkEditableAttri
 }
 
 // --- Attribute helpers -----------------------------------------------------
-
-export function toArray(value: unknown): string[] {
-    if (value === undefined || value === null) return [];
-    return Array.isArray(value) ? (value as string[]) : [value as string];
-}
-
-export function toSingle(value: unknown): string | undefined {
-    const arr = toArray(value);
-    return arr.length > 0 ? arr[0] : undefined;
-}
-
-// Pulls the CN value out of a DN, e.g. "CN=John Smith,OU=Users,DC=..." -> "John Smith"
-export function cnFromDN(dn: string | undefined): string | undefined {
-    if (!dn) return undefined;
-    const match = dn.match(/^CN=([^,]+)/i);
-    return match ? match[1] : undefined;
-}
-
-// Builds a readable OU path from a DN, e.g.
-// "CN=John Smith,OU=Sales,OU=Company,DC=company,DC=local" -> "Company > Sales"
-export function ouFromDN(dn: string): string {
-    const parts = dn.split(',').filter((p) => p.startsWith('OU='));
-    const names = parts.map((p) => p.replace(/^OU=/i, ''));
-    return names.reverse().join(' > ') || 'Root';
-}
+// toArray / toSingle / cnFromDN / ouFromDN come from $lib/server/ldap (see
+// the re-export above).
 
 // Resolves a friendly OU path (as produced by ouFromDN / shown in dropdowns)
 // back to a distinguishedName by searching for organizationalUnit objects.

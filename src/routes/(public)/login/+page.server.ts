@@ -3,6 +3,7 @@ import { randomBytes, createHmac } from 'crypto';
 import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { ldapAuthenticate } from '$lib/ldap';
+import { isAuthorizedDn } from '$lib/server/ldap';
 
 function sign(data: string) {
     return createHmac('sha256', env.SESSION_SECRET)
@@ -24,11 +25,20 @@ export const actions: Actions = {
             return fail(401, { error: ldapUser.error });
         }
 
+        // Defense in depth: ldapAuthenticate already searches only within
+        // LDAP_SEARCH_DN_ICT, so this should never trip in practice — but
+        // authorization for the whole app hinges on that scope, so it's
+        // worth verifying explicitly rather than trusting it implicitly.
+        if (!isAuthorizedDn(ldapUser.dn)) {
+            return fail(403, { error: 'Your account is not authorized to use this application.' });
+        }
+
         // Build session payload
         const sessionData = {
             username,
             name: ldapUser.name,
             email: ldapUser.email,
+            dn: ldapUser.dn,
             exp: Date.now() + (1000 * 60 * 60 * 8) // 8 hours
         };
 

@@ -1,27 +1,12 @@
-import { Attribute, Change, Client } from 'ldapts';
+import { Attribute, Change } from 'ldapts';
 import { env } from '$env/dynamic/private';
-import { escapeLdapFilter } from '$lib/server/ldap';
-
-const ACCOUNTDISABLE = 0x0002;
-
-async function getClient() {
-    const client = new Client({
-        url: env.LDAP_URL
-    });
-
-    await client.bind(
-        env.LDAP_SERVICE_USER_DN,
-        env.LDAP_SERVICE_PASSWORD
-    );
-
-    return client;
-}
+import { escapeLdapFilter, getBoundClient, ACCOUNTDISABLE } from '$lib/server/ldap';
 
 export async function setUserEnabled(
     sAMAccountName: string,
     enabled: boolean
 ) {
-    const client = await getClient();
+    const client = await getBoundClient();
 
     try {
 
@@ -67,7 +52,7 @@ export async function setUserEnabled(
 }
 
 export async function unlockUser(username: string) {
-    const client = await getClient();
+    const client = await getBoundClient();
 
     try {
         const result = await client.search(env.LDAP_SEARCH_DN, {

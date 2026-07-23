@@ -1,4 +1,3 @@
-import { env } from '$env/dynamic/public';
 import { appendFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 

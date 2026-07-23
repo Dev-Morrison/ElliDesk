@@ -72,7 +72,7 @@
         <h1 class="text-4xl font-bold">All Users</h1>
         <p class="text-base-content">View all Active Directory users</p>
     </span>
-    <StatBoard totalUsers={users.length} activeUsers={activeUsersWithLogonsWithinTheLastWeek} lockedAccounts={lockedAccounts} />
+    <!-- <StatBoard totalUsers={users.length} activeUsers={activeUsersWithLogonsWithinTheLastWeek} lockedAccounts={lockedAccounts} /> -->
 </div>
 
 

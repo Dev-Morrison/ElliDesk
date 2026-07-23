@@ -1,5 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
-import { ldapAddUser, ldapAddUserToGroups } from '$lib/ldap';
+import { ldapAddUser } from '$lib/ldap';
 import type { LdapAddUserParams, SessionUser } from '$lib/types';
 import { AD_CONFIG, getGroupsForDepartment, getOUForDepartment } from '$lib/config/adconfig';
 import { fail } from '@sveltejs/kit';
