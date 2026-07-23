@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fileTimeToDate } from "$lib";
   import Navbar from "$lib/components/Navbar.svelte";
-  import { KeyRound, Copy, Check, RefreshCw } from "lucide-svelte";
+  import { KeyRound, Copy, Check, RefreshCw, ArrowLeft } from "lucide-svelte";
 
   let { data } = $props();
 
@@ -106,6 +106,11 @@
 </script>
 
 <div class="space-y-5">
+  <a href="/all-users" class="btn btn-ghost btn-sm gap-1 -ml-3">
+    <ArrowLeft size={16} />
+    Back to Users
+  </a>
+
   <div class="flex justify-between">
     <div>
       <h1 class="text-2xl font-bold">
