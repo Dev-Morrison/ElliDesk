@@ -8,23 +8,64 @@
     let { data } = $props();
 
     let search = $state("");
+    let statusFilter = $state<"all" | "enabled" | "disabled">("all");
+    let lockedFilter = $state<"all" | "locked" | "unlocked">("all");
+    let departmentFilter = $state("all");
 
     let loading = $state(false);
 
+    let departmentOptions = $derived.by(() => {
+        const set = new Set(
+            data.users
+                .map((u: ADUser) => u.department)
+                .filter((d: string | undefined): d is string => !!d && d.trim() !== "")
+        );
+        return Array.from(set).sort();
+    });
+
     let users = $derived.by(() => {
+
+        const s = search.toLowerCase();
 
         return data.users.filter((u: ADUser) => {
 
-            const s = search.toLowerCase();
-
-            return (
+            const matchesSearch =
+                s === "" ||
                 u.cn?.toLocaleLowerCase().includes(s) ||
-                u.sAMAccountName?.toLocaleLowerCase().includes(s)
-            );
+                u.sAMAccountName?.toLocaleLowerCase().includes(s);
+
+            const matchesStatus =
+                statusFilter === "all" ||
+                (statusFilter === "enabled" && u.enabled) ||
+                (statusFilter === "disabled" && !u.enabled);
+
+            const matchesLocked =
+                lockedFilter === "all" ||
+                (lockedFilter === "locked" && u.locked) ||
+                (lockedFilter === "unlocked" && !u.locked);
+
+            const matchesDepartment =
+                departmentFilter === "all" || u.department === departmentFilter;
+
+            return matchesSearch && matchesStatus && matchesLocked && matchesDepartment;
 
         });
 
     });
+
+    let hasActiveFilters = $derived(
+        search !== "" ||
+        statusFilter !== "all" ||
+        lockedFilter !== "all" ||
+        departmentFilter !== "all"
+    );
+
+    function clearFilters() {
+        search = "";
+        statusFilter = "all";
+        lockedFilter = "all";
+        departmentFilter = "all";
+    }
 
     async function refreshUsers() {
         loading = true;
@@ -171,13 +212,42 @@
 
 <div class="space-y-5 overflow-visible">
 
-    <div class="flex justify-between">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
 
-        <input
-            bind:value={search}
-            class="input input-bordered w-96"
-            placeholder="Search users..."
-        />
+        <div class="flex flex-col sm:flex-row flex-wrap gap-3 flex-1">
+
+            <input
+                bind:value={search}
+                class="input input-bordered w-full sm:w-72"
+                placeholder="Search users..."
+            />
+
+            <select bind:value={statusFilter} class="select select-bordered w-full sm:w-40">
+                <option value="all">All Statuses</option>
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+            </select>
+
+            <select bind:value={lockedFilter} class="select select-bordered w-full sm:w-40">
+                <option value="all">All Accounts</option>
+                <option value="locked">Locked Only</option>
+                <option value="unlocked">Not Locked</option>
+            </select>
+
+            <select bind:value={departmentFilter} class="select select-bordered w-full sm:w-52">
+                <option value="all">All Departments</option>
+                {#each departmentOptions as dept}
+                    <option value={dept}>{dept}</option>
+                {/each}
+            </select>
+
+            {#if hasActiveFilters}
+                <button type="button" class="btn btn-ghost" onclick={clearFilters}>
+                    Clear filters
+                </button>
+            {/if}
+
+        </div>
 
         <!-- <a href="/add-user" class="btn btn-primary">
             Add User
@@ -196,6 +266,10 @@
         </button>
 
     </div>
+
+    <p class="text-sm text-base-content/60">
+        Showing {users.length} of {data.users.length} users
+    </p>
 
     <div class="">
 

@@ -2,6 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { env } from '$env/dynamic/private';
 import type { SessionUser } from '$lib/types';
+import { isAuthorizedDn } from '$lib/server/ldap';
 
 function sign(data: string) {
     return createHmac('sha256', env.SESSION_SECRET)
@@ -17,28 +18,34 @@ function signaturesMatch(a: string, b: string): boolean {
     return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
 }
 
-export const handle: Handle = async ({ event, resolve }) => {
-    const cookie = event.cookies.get('session');
-    if (!cookie) {
-        event.locals.user = null;
-        return resolve(event);
-    }
+function resolveSessionUser(cookie: string | undefined): SessionUser | null {
+    if (!cookie) return null;
 
     const [payload, signature] = cookie.split('.');
+    if (!payload || !signature || !signaturesMatch(sign(payload), signature)) return null;
 
-    if (!payload || !signature || !signaturesMatch(sign(payload), signature)) {
-        event.locals.user = null;
-        return resolve(event);
+    try {
+        const user = JSON.parse(Buffer.from(payload, 'base64').toString());
+        if (user.exp < Date.now()) return null;
+        return user as SessionUser;
+    } catch {
+        return null;
     }
+}
 
-    const user = JSON.parse(Buffer.from(payload, 'base64').toString());
+export const handle: Handle = async ({ event, resolve }) => {
+    event.locals.user = resolveSessionUser(event.cookies.get('session'));
 
-    if (user.exp < Date.now()) {
-        event.locals.user = null;
-        return resolve(event);
+    // The (auth) layout only gates page navigation — /api/* routes live
+    // outside that route group and perform the actual AD reads/writes, so
+    // the authorization boundary has to be enforced here too, not just at
+    // the page level.
+    if (event.url.pathname.startsWith('/api/') && !isAuthorizedDn(event.locals.user?.dn)) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
-
-    event.locals.user = user as SessionUser;
 
     return resolve(event);
 };
