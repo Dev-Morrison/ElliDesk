@@ -1,6 +1,7 @@
 import { Client, Change, type SearchOptions, Attribute } from 'ldapts';
 import type { LdapAddUserParams } from '$lib/types';
 import { env } from '$env/dynamic/private';
+import { escapeLdapFilter } from '$lib/server/ldap';
 
 
 const client = new Client({
@@ -12,7 +13,7 @@ export async function ldapAuthenticate(username: string, password: string) {
     try {
             await client.bind(env.LDAP_SERVICE_USER_DN, env.LDAP_SERVICE_PASSWORD);
             const { searchEntries, searchReferences } = await client.search(env.LDAP_SEARCH_DN_ICT, {
-                filter: '(sAMAccountName=' + username + ')',
+                filter: `(sAMAccountName=${escapeLdapFilter(username)})`,
             });
             if (searchEntries.length === 0) {
                 return {
@@ -81,9 +82,9 @@ export async function ldapAddUser(params: LdapAddUserParams): Promise<{ success:
         // 🔎 DUPLICATE PRE-CHECK
         const searchFilter = `
             (|
-                (sAMAccountName=${samAccountName})
-                (userPrincipalName=${userPrincipalName})
-                ${proxyAddresses.map(p => `(proxyAddresses=${p})`).join('')}
+                (sAMAccountName=${escapeLdapFilter(samAccountName)})
+                (userPrincipalName=${escapeLdapFilter(userPrincipalName)})
+                ${proxyAddresses.map(p => `(proxyAddresses=${escapeLdapFilter(p)})`).join('')}
             )
         `.replace(/\s+/g, '');
 

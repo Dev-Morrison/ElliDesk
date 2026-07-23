@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev --host",
+		"dev": "NODE_EXTRA_CA_CERTS=./src/lib/keys/falcon-ldaps.pem vite dev --host",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -27,6 +27,7 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
-		"ldapts": "^8.1.7"
+		"ldapts": "^8.1.7",
+		"lucide-svelte": "^1.0.1"
 	}
 }

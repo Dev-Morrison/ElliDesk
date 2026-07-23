@@ -17,9 +17,11 @@ export const AD_CONFIG = {
           ]
         },
 
-        Finance: {
+        FINANCE: {
           ou: `OU=FINANCE BRANCH,${EntityBSJ},${DomainDN}`,
-          groups: [AllStaffGroup]
+          groups: [AllStaffGroup,
+            `CN=Finance,OU=FINANCE BRANCH,${EntityBSJ},${DomainDN}`
+          ]
         },
 
         HR: {

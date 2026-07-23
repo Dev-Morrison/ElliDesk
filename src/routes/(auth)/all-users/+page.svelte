@@ -18,8 +18,7 @@
 
             return (
                 u.cn?.toLocaleLowerCase().includes(s) ||
-                u.sAMAccountName?.includes(s) ||
-                u.mail?.includes(s)
+                u.sAMAccountName?.toLocaleLowerCase().includes(s)
             );
 
         });
@@ -68,9 +67,7 @@
         }).length;
     });
 </script>
-<Navbar username={data.user.username} />
-<section class="p-10">
-<div class="flex justify-between items-center pb-10">
+<div class="flex justify-between items-center pb-10 w-full">
     <span>
         <h1 class="text-4xl font-bold">All Users</h1>
         <p class="text-base-content">View all Active Directory users</p>
@@ -80,7 +77,7 @@
 
 
 
-<div class="space-y-5">
+<div class="space-y-5 overflow-visible">
 
     <div class="flex justify-between">
 
@@ -245,4 +242,3 @@
     </div>
 
 </div>
-</section>

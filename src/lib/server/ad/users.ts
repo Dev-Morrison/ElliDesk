@@ -1,5 +1,6 @@
 import { Attribute, Change, Client } from 'ldapts';
 import { env } from '$env/dynamic/private';
+import { escapeLdapFilter } from '$lib/server/ldap';
 
 const ACCOUNTDISABLE = 0x0002;
 
@@ -26,7 +27,7 @@ export async function setUserEnabled(
 
         const result = await client.search(env.LDAP_SEARCH_DN, {
             scope: 'sub',
-            filter: `(sAMAccountName=${sAMAccountName})`,
+            filter: `(sAMAccountName=${escapeLdapFilter(sAMAccountName)})`,
             attributes: [
                 'distinguishedName',
                 'userAccountControl'
@@ -71,7 +72,7 @@ export async function unlockUser(username: string) {
     try {
         const result = await client.search(env.LDAP_SEARCH_DN, {
             scope: 'sub',
-            filter: `(sAMAccountName=${username})`,
+            filter: `(sAMAccountName=${escapeLdapFilter(username)})`,
             attributes: ['distinguishedName']
         });
 

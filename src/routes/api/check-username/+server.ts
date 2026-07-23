@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import { Client } from 'ldapts';
 import { env } from '$env/dynamic/private';
+import { escapeLdapFilter } from '$lib/server/ldap';
 
 export const POST: RequestHandler = async ({ request }) => {
   const { username } = await request.json();
@@ -15,7 +16,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const result = await client.search(env.LDAP_SEARCH_DN, {
       scope: 'sub',
-      filter: `(sAMAccountName=${username})`
+      filter: `(sAMAccountName=${escapeLdapFilter(username)})`
     });
 
     await client.unbind();

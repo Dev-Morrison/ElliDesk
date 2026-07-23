@@ -2,6 +2,7 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { Client } from 'ldapts';
 import { env } from '$env/dynamic/private';
+import { escapeLdapFilter } from '$lib/server/ldap';
 
 export const GET: RequestHandler = async ({ params }) => {
 
@@ -21,7 +22,7 @@ export const GET: RequestHandler = async ({ params }) => {
             env.LDAP_SEARCH_DN,
             {
                 scope: 'sub',
-                filter: `(sAMAccountName=${params.samAccountName})`,
+                filter: `(sAMAccountName=${escapeLdapFilter(params.samAccountName ?? '')})`,
 
                 attributes: [
                     '*',

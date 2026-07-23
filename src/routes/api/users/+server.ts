@@ -5,7 +5,22 @@ import { env } from '$env/dynamic/private';
 const ACCOUNTDISABLE = 0x0002;
 const LOCKOUT = 0x0010;
 
-export const GET: RequestHandler = async () => {
+// Escapes LDAP filter special characters per RFC 4515 so search input
+// can't break out of the filter or inject additional clauses.
+function escapeLdapFilter(value: string): string {
+    return value
+        .replace(/\\/g, '\\5c')
+        .replace(/\*/g, '\\2a')
+        .replace(/\(/g, '\\28')
+        .replace(/\)/g, '\\29')
+        .replace(/\u0000/g, '\\00');
+}
+
+export const GET: RequestHandler = async ({ url }) => {
+    const search = url.searchParams.get('search')?.trim() ?? '';
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+
     const client = new Client({
         url: env.LDAP_URL
     });
@@ -16,11 +31,25 @@ export const GET: RequestHandler = async () => {
             env.LDAP_SERVICE_PASSWORD
         );
 
+        // Only return actual user accounts
+        let filter = '(&(objectCategory=person)(objectClass=user))';
+
+        if (search) {
+            const term = escapeLdapFilter(search);
+
+            // Match against display name, username, UPN, or CN — typeahead
+            // style, so we use a leading+trailing wildcard.
+            filter = `(&(objectCategory=person)(objectClass=user)(|` +
+                `(displayName=*${term}*)` +
+                `(sAMAccountName=*${term}*)` +
+                `(userPrincipalName=*${term}*)` +
+                `(cn=*${term}*)` +
+                `))`;
+        }
+
         const result = await client.search(env.LDAP_SEARCH_DN, {
             scope: 'sub',
-
-            // Only return actual user accounts
-            filter: '(&(objectCategory=person)(objectClass=user))',
+            filter,
 
             attributes: [
                 'distinguishedName',
@@ -32,13 +61,16 @@ export const GET: RequestHandler = async () => {
                 'userAccountControl',
                 'lockoutTime',
                 'lastLogonTimestamp'
-            ]
-        });
+            ],
 
+            // Ask the DC to cap results itself when a limit is given —
+            // cheaper than fetching everything and slicing after.
+            ...(limit ? { sizeLimit: limit } : {})
+        });
 
         await client.unbind();
 
-        const users = result.searchEntries.map((entry: any) => {
+        let users = result.searchEntries.map((entry: any) => {
 
             const uac = Number(entry.userAccountControl ?? 0);
 
@@ -59,11 +91,14 @@ export const GET: RequestHandler = async () => {
             };
         });
 
-        // console.log('Retrieved users:', users);
-
         users.sort((a, b) =>
             String(a.displayName).localeCompare(String(b.displayName))
         );
+
+        // Belt-and-braces in case the LDAP server ignores sizeLimit
+        if (limit) {
+            users = users.slice(0, limit);
+        }
 
         return new Response(JSON.stringify(users), {
             headers: {
