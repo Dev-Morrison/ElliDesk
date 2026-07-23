@@ -81,7 +81,7 @@
             href: '/ous',
             icon: FolderKanban,
             accent: 'secondary',
-            status: 'soon'
+            status: 'active'
         },
         {
             title: 'Password Policy',

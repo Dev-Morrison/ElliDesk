@@ -34,3 +34,11 @@ export interface ADUser {
 
     lastLogon?: string;
 }
+
+export interface OuNode {
+    dn: string;
+    name: string;
+    directUsers: number;
+    totalUsers: number;
+    children: OuNode[];
+}
