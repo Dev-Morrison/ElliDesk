@@ -18,6 +18,8 @@ export type AuditAction =
     | 'group-member-added'
     | 'group-member-removed'
     | 'group-updated'
+    | 'computer-enabled'
+    | 'computer-disabled'
     | 'group-deleted';
 
 export interface AuditEvent {

@@ -42,3 +42,21 @@ export interface OuNode {
     totalUsers: number;
     children: OuNode[];
 }
+
+export interface ADComputer {
+    dn: string;
+    cn: string;
+    sAMAccountName: string;
+    dnsHostName?: string;
+    operatingSystem?: string;
+    operatingSystemVersion?: string;
+    description?: string;
+    ou: string;
+
+    enabled: boolean;
+
+    lastLogon?: string;
+    whenCreated?: string;
+    whenChanged?: string;
+    servicePrincipalNameCount: number;
+}

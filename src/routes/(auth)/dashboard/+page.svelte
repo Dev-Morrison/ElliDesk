@@ -73,7 +73,7 @@
             href: '/computers',
             icon: Monitor,
             accent: 'info',
-            status: 'soon'
+            status: 'active'
         },
         {
             title: 'Organizational Units',

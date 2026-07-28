@@ -26,7 +26,9 @@
         'group-member-added': { label: 'Member Added', badge: 'badge-info' },
         'group-member-removed': { label: 'Member Removed', badge: 'badge-warning' },
         'group-updated': { label: 'Group Updated', badge: 'badge-info' },
-        'group-deleted': { label: 'Group Deleted', badge: 'badge-error' }
+        'group-deleted': { label: 'Group Deleted', badge: 'badge-error' },
+        'computer-enabled': { label: 'Computer Enabled', badge: 'badge-success' },
+        'computer-disabled': { label: 'Computer Disabled', badge: 'badge-warning' }
     };
 
     function actionMeta(a: string) {
