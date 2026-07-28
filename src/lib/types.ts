@@ -60,3 +60,82 @@ export interface ADComputer {
     whenChanged?: string;
     servicePrincipalNameCount: number;
 }
+
+export interface OffboardingTarget {
+    dn: string;
+    sAMAccountName: string;
+    displayName: string;
+    currentOU: string;
+    enabled: boolean;
+    groups: { dn: string; name: string }[];
+    alreadyInRetention: boolean;
+}
+
+export interface OffboardResult {
+    dn: string;
+    sAMAccountName: string;
+    displayName: string;
+    success: boolean;
+    error?: string;
+    removedGroups: string[];
+    failedGroups: { name: string; error: string }[];
+    disabled: boolean;
+    moved: boolean;
+}
+
+export interface InactiveDeviceRow {
+    dn: string;
+    cn: string;
+    dnsHostName: string;
+    operatingSystem: string;
+    ou: string;
+    lastLogon: string | null;
+    daysSinceLogon: number | null;
+}
+
+export interface StaleUserRow {
+    dn: string;
+    sAMAccountName: string;
+    displayName: string;
+    department: string;
+    ou: string;
+    lastLogon: string | null;
+    daysSinceLogon: number | null;
+}
+
+export interface NonExpiringPasswordRow {
+    dn: string;
+    sAMAccountName: string;
+    displayName: string;
+    department: string;
+    ou: string;
+    enabled: boolean;
+    passwordLastSet: string | null;
+}
+
+export interface DefaultPasswordPolicy {
+    minLength: number | null;
+    historyLength: number | null;
+    maxAgeDays: number | null; // null = passwords never expire
+    minAgeDays: number | null;
+    complexityEnabled: boolean;
+    reversibleEncryption: boolean;
+    lockoutThreshold: number | null; // 0 = lockout disabled
+    lockoutDurationMinutes: number | null;
+    lockoutObservationMinutes: number | null;
+}
+
+export interface FineGrainedPolicy {
+    name: string;
+    precedence: number | null;
+    minLength: number | null;
+    historyLength: number | null;
+    maxAgeDays: number | null;
+    minAgeDays: number | null;
+    complexityEnabled: boolean;
+    reversibleEncryption: boolean;
+    lockoutThreshold: number | null;
+    lockoutDurationMinutes: number | null;
+    lockoutObservationMinutes: number | null;
+    appliesTo: string[];
+}

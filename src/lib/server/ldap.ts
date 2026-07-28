@@ -3,6 +3,7 @@ import { env } from '$env/dynamic/private';
 
 export const ACCOUNTDISABLE = 0x0002;
 export const LOCKOUT = 0x0010;
+export const DONT_EXPIRE_PASSWD = 0x10000;
 
 /**
  * Escapes LDAP filter special characters per RFC 4515 so values coming
@@ -16,6 +17,20 @@ export function escapeLdapFilter(value: string): string {
         .replace(/\(/g, '\\28')
         .replace(/\)/g, '\\29')
         .replace(/\u0000/g, '\\00');
+}
+
+/**
+ * Escapes a single DN component (an RDN's value) per RFC 4514 — distinct
+ * from `escapeLdapFilter` (RFC 4515, for search filters). Needed whenever a
+ * value coming from AD or user input is used to *build* a DN, e.g. moving
+ * an object with `client.modifyDN()`.
+ */
+export function escapeDN(value: string): string {
+    return value
+        .replace(/[\\",+<>;]/g, (c) => `\\${c}`)
+        .replace(/^ /, '\\ ')
+        .replace(/^#/, '\\#')
+        .replace(/ $/, '\\ ');
 }
 
 export function toArray(value: unknown): string[] {

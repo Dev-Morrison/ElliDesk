@@ -9,7 +9,7 @@
         Lock,
         Shield,
         Mail,
-        Wand2,
+        Wrench,
         Monitor,
         FolderKanban,
         ShieldCheck,
@@ -60,10 +60,10 @@
             status: 'active'
         },
         {
-            title: 'Bulk Update',
-            description: 'Apply an attribute change across many users at once, with a full preview.',
-            href: '/maintenance/bulk-update',
-            icon: Wand2,
+            title: 'Maintenance',
+            description: 'Offboarding, bulk updates, and directory health reports.',
+            href: '/maintenance',
+            icon: Wrench,
             accent: 'accent',
             status: 'active'
         },
@@ -89,7 +89,7 @@
             href: '/policies/password',
             icon: ShieldCheck,
             accent: 'warning',
-            status: 'soon'
+            status: 'active'
         },
         {
             title: 'Audit Logs',

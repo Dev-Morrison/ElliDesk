@@ -3,6 +3,10 @@ export const DomainDN = "DC=BOS,DC=local";
 export const AllStaffGroup =
   "CN=All BSJ Staff,OU=Distribution Groups,OU=GROUPS,OU=ENTITY - BSJ,DC=BOS,DC=local";
 
+// Offboarded accounts are relocated here — stripped of group membership
+// and disabled, but retained (not deleted) per retention policy.
+export const RetentionOU = `OU=FE_RETENTION,${DomainDN}`;
+
 export const AD_CONFIG = {
   domains: {
     "bsj.org.jm": {
