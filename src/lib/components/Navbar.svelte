@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, Menu } from 'lucide-svelte';
+  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, Menu, HelpCircle } from 'lucide-svelte';
 
   let { username }: { username: string } = $props();
 
@@ -51,7 +51,11 @@
     </div>
   </div>
 
-  <div class="flex-none">
+  <div class="flex-none gap-1">
+    <a href="/help" class="btn btn-ghost btn-square" class:menu-active={isActive('/help')} aria-label="Help">
+      <HelpCircle size={20} />
+    </a>
+
     <ul class="menu menu-horizontal px-1">
       <li>
         <details>

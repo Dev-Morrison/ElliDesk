@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElliDesk User Guide</title>
+<style>
+  :root {
+    --ink: #1f2430;
+    --muted: #5b6472;
+    --line: #e2e5ea;
+    --accent: #2f5fd6;
+    --accent-bg: #eef2fd;
+    --warn-bg: #fff7e6;
+    --warn-border: #f0b429;
+    --warn-ink: #7a4a00;
+    --info-bg: #eef6ff;
+    --info-border: #7fb4f2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    margin: 0;
+    background: #f7f8fa;
+  }
+  .page {
+    max-width: 840px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 48px 56px 80px;
+  }
+  header.cover {
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+  header.cover h1 {
+    font-size: 32px;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  header.cover p.subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0;
+  }
+  header.cover .meta {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .callout {
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 20px 0;
+    font-size: 14.5px;
+  }
+  .callout.warn {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    color: var(--warn-ink);
+  }
+  .callout.info {
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    color: #1f3d61;
+  }
+  .callout strong.label {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  nav.toc {
+    background: var(--accent-bg);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 24px 0 36px;
+  }
+  nav.toc h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  nav.toc ol {
+    margin: 0;
+    padding-left: 20px;
+    columns: 2;
+    column-gap: 32px;
+  }
+  nav.toc li { margin-bottom: 4px; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; font-size: 14px; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  section { margin: 36px 0; page-break-inside: avoid; }
+  h2 {
+    font-size: 21px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  h3 {
+    font-size: 16px;
+    margin: 20px 0 8px;
+    color: var(--ink);
+  }
+  p { margin: 10px 0; font-size: 14.5px; }
+  ul, ol { font-size: 14.5px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  code {
+    background: #f1f2f5;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  strong { color: var(--ink); }
+  a { color: var(--accent); }
+  footer {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  @media print {
+    body { background: #fff; }
+    .page { padding: 0; max-width: none; }
+    nav.toc a { color: var(--ink); }
+    section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="cover">
+    <h1>ElliDesk User Guide</h1>
+    <p class="subtitle">Active Directory management console — a walkthrough for the ICT/MIS team</p>
+    <div class="meta">Bureau of Standards Jamaica &middot; Internal use only</div>
+  </header>
+
+  <div class="callout warn">
+    <strong class="label">Known issue — please read first</strong>
+    <strong>Password Reset currently fails with a connection error.</strong> This is expected and already
+    known — see the "Known Issues" section near the end of this guide for details. Everything else described
+    in this document is fully working today.
+  </div>
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#getting-started">Getting Started</a></li>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#all-users">Managing Users</a></li>
+      <li><a href="#add-user">Adding a New User</a></li>
+      <li><a href="#groups">Groups</a></li>
+      <li><a href="#ous">Organizational Units</a></li>
+      <li><a href="#computers">Computers</a></li>
+      <li><a href="#maintenance">Maintenance Hub</a></li>
+      <li><a href="#password-policy">Password Policy</a></li>
+      <li><a href="#audit-logs">Audit Logs</a></li>
+      <li><a href="#known-issues">Known Issues</a></li>
+      <li><a href="#getting-help">Getting Help</a></li>
+    </ol>
+  </nav>
+
+  <section id="getting-started">
+    <h2>Getting Started</h2>
+    <p>
+      ElliDesk is a web console for day-to-day Active Directory administration — user accounts, groups,
+      computers, and directory cleanup — without needing the Active Directory Users and Computers (ADUC)
+      snap-in or ADSI Edit.
+    </p>
+    <h3>Signing in</h3>
+    <p>
+      Go to the app and sign in with your normal <strong>BOS domain username and password</strong> (the same
+      one you use to log into your Windows machine). There's no separate account to create.
+    </p>
+    <p>
+      Access is currently limited to accounts under the ICT/MIS organizational unit. If you sign in with
+      correct credentials but see "not authorized," it means your account isn't in scope yet — contact
+      whoever administers ElliDesk to be added.
+    </p>
+    <p>Sessions last <strong>8 hours</strong>, after which you'll need to sign in again.</p>
+  </section>
+
+  <section id="dashboard">
+    <h2>Dashboard</h2>
+    <p>The landing page after login. It shows at a glance:</p>
+    <ul>
+      <li>Total, enabled, disabled, and locked user counts</li>
+      <li>Total groups, split into security vs. distribution</li>
+      <li>A warning banner if any accounts are currently locked out, linking straight to them</li>
+      <li>A grid of every tool in the app ("Quick Actions") as the fastest way to get around</li>
+    </ul>
+    <p>
+      You can also navigate using the menu bar at the top of every page, which links directly to Users,
+      Groups, OUs, Computers, Maintenance, and Audit Logs.
+    </p>
+  </section>
+
+  <section id="all-users">
+    <h2>Managing Users</h2>
+    <p>
+      <strong>Users &rarr; All Users</strong> lists every account in the directory. Use the search box and
+      the three filter dropdowns (Status, Locked, Department) together to narrow the list — for example,
+      "Locked Only" plus a specific department finds exactly who needs unlocking in that team.
+    </p>
+    <h3>Actions on a user</h3>
+    <p>Click <strong>Actions</strong> on any row for a menu with:</p>
+    <ul>
+      <li><strong>View</strong> &mdash; opens the full user detail page</li>
+      <li><strong>Enable / Disable</strong> &mdash; toggles whether the account can log in anywhere</li>
+      <li><strong>Unlock</strong> &mdash; only shown when the account is currently locked out</li>
+      <li><strong>Reset Password</strong> &mdash; opens a dialog described below</li>
+    </ul>
+    <h3>Resetting a password</h3>
+    <p>
+      The Reset Password dialog generates a strong random password for you automatically (with a Regenerate
+      button if you want a different one). Two checkboxes, both on by default:
+    </p>
+    <ul>
+      <li><strong>User must change password at next logon</strong> &mdash; forces them to set their own on first login</li>
+      <li><strong>Unlock account</strong> &mdash; clears any existing lockout at the same time</li>
+    </ul>
+    <p>
+      After a successful reset, the password is shown once with a copy button — AD doesn't let the app
+      retrieve it again after that, so copy it before closing the dialog.
+    </p>
+    <div class="callout warn">
+      This action currently errors out — see Known Issues below. It will start working as soon as the LDAPS
+      certificate is in place; nothing else needs to change on your end.
+    </div>
+    <h3>User detail page</h3>
+    <p>
+      Clicking a user's name (or "View") opens their full record: General, Account, Organization, and a raw
+      Attribute Editor tab that shows every AD attribute on the object — useful for troubleshooting. The same
+      Enable/Disable, Unlock, and Reset Password actions are available here too.
+    </p>
+  </section>
+
+  <section id="add-user">
+    <h2>Adding a New User</h2>
+    <p>
+      <strong>Add New User</strong> (from the Dashboard) creates a new AD account. Fill in name, username,
+      UPN (email-style login), and pick a department — the department determines which OU the account is
+      placed in and which groups it's added to automatically.
+    </p>
+    <div class="callout info">
+      New accounts are created <strong>disabled and without a password</strong> on purpose. Use Reset
+      Password afterward to set an initial password — that's also what enables the account for use. Because
+      Reset Password is temporarily unavailable, newly created accounts can't be activated until that's
+      resolved either.
+    </div>
+  </section>
+
+  <section id="groups">
+    <h2>Groups</h2>
+    <p>
+      <strong>Groups</strong> lists every security and distribution group, with search and filters by type
+      and OU. Click a group to see its members, or use the row menu to edit its description, email, or
+      manager, view members, or delete it entirely.
+    </p>
+    <p>
+      From a group's member list you can add or remove members directly — search for a user, add them, or
+      remove existing members with one click. Changes take effect immediately in AD.
+    </p>
+  </section>
+
+  <section id="ous">
+    <h2>Organizational Units</h2>
+    <p>
+      <strong>OUs</strong> shows the full organizational unit tree on the left — click any folder to expand
+      it, and click its name to load the users inside it on the right. A user-count badge on each OU includes
+      everyone in its sub-OUs. Toggle <strong>Include sub-OUs</strong> to see everyone underneath a branch,
+      not just users directly in that one folder.
+    </p>
+  </section>
+
+  <section id="computers">
+    <h2>Computers</h2>
+    <p>
+      <strong>Computers</strong> lists every computer object in the domain with its OS, OU, last logon, and
+      enabled/disabled status. Filter by status, operating system, OU, or inactivity (e.g. "Inactive 90+
+      days"). Click a row for full details, and enable or disable the computer account directly.
+    </p>
+  </section>
+
+  <section id="maintenance">
+    <h2>Maintenance Hub</h2>
+    <p>
+      <strong>Maintenance</strong> is home to three cleanup and bulk-action tools. Each one runs a full
+      <em>preview</em> before writing anything to AD, so you always see exactly what's about to happen first.
+    </p>
+
+    <h3>Offboarding</h3>
+    <p>The tool for retiring an account when someone leaves. It's a four-step wizard:</p>
+    <ol>
+      <li><strong>Select Users</strong> &mdash; search and add one or more people to offboard</li>
+      <li><strong>Actions</strong> &mdash; choose any combination of: remove from all groups, disable the account, and/or move it into the <code>FE_RETENTION</code> OU. All three are on by default</li>
+      <li><strong>Preview</strong> &mdash; shows each person's current OU, every group they'll be removed from, and whether they're already disabled, before anything happens</li>
+      <li><strong>Apply</strong> &mdash; runs it, then shows a per-person result you can export to CSV</li>
+    </ol>
+    <div class="callout info">
+      Accounts belonging to protected groups (Domain Admins, Enterprise Admins, Schema Admins,
+      Administrators) are automatically excluded from offboarding as a safety measure.
+    </div>
+    <p>Accounts are <strong>moved and disabled, never deleted</strong> — everything in <code>FE_RETENTION</code> is fully recoverable later if needed.</p>
+
+    <h3>Bulk Update</h3>
+    <p>
+      Change one attribute (Department, Job Title, Company, Office, Description, or Manager) across many
+      users in one pass. Scope your target group either by OU (with an option to include sub-OUs) or by
+      manually searching and selecting specific people, then set the new value and load a preview before
+      applying. Results are exportable to CSV.
+    </p>
+
+    <h3>Reports</h3>
+    <p>Three directory-hygiene reports, each with a CSV export button:</p>
+    <ul>
+      <li><strong>Inactive Devices</strong> &mdash; enabled computers with no logon activity in the last 30/60/90/180 days</li>
+      <li><strong>Stale Accounts</strong> &mdash; enabled user accounts with no logon activity over the same thresholds — good candidates to check before offboarding</li>
+      <li><strong>Non-Expiring Passwords</strong> &mdash; every account with "password never expires" set, a standard item to review periodically</li>
+    </ul>
+  </section>
+
+  <section id="password-policy">
+    <h2>Password Policy</h2>
+    <p>
+      A <strong>read-only</strong> view of the domain's default password policy (minimum length, history,
+      age, complexity, and lockout settings) plus any Fine-Grained Password Policies (PSOs) configured on the
+      domain. This page doesn't let you change anything — policy changes are made through Group Policy, as
+      usual.
+    </p>
+  </section>
+
+  <section id="audit-logs">
+    <h2>Audit Logs</h2>
+    <p>
+      Every change made through ElliDesk is recorded here automatically — logins, password resets, account
+      enable/disable/unlock, offboarding, bulk updates, and all group and computer changes. Filter by action
+      type, success/failure, a date range, or free-text search. Click any row for full details.
+    </p>
+    <p>
+      This is the first place to check if you need to know who did what, or when.
+    </p>
+  </section>
+
+  <section id="known-issues">
+    <h2>Known Issues</h2>
+    <div class="callout warn">
+      <strong class="label">Password Reset is temporarily unavailable</strong>
+      <p style="margin:8px 0 0">
+        Active Directory refuses to accept a new password over a connection that isn't encrypted, so ElliDesk
+        connects using StartTLS specifically for that one action. Our domain controller doesn't yet have the
+        self-signed certificate installed for LDAPS/StartTLS, so right now Reset Password will fail with a
+        connection error every time it's used — this includes activating brand-new accounts created via Add
+        New User, since activation is done through the same Reset Password flow.
+      </p>
+      <p style="margin:8px 0 0">
+        This is being worked on and doesn't affect anything else in the app — search, viewing,
+        enable/disable, unlock, groups, OUs, computers, offboarding, bulk update, reports, and audit logs are
+        all fully working today. Once the certificate is installed, password resets will start working
+        immediately with no changes needed on your end.
+      </p>
+    </div>
+  </section>
+
+  <section id="getting-help">
+    <h2>Getting Help</h2>
+    <p>
+      If something looks wrong, isn't reflecting a change you expect, or you're not sure whether an action is
+      safe to take (especially Offboarding or Bulk Update), check the Audit Logs page first — it usually
+      explains what actually happened. Otherwise, reach out to whoever administers ElliDesk in ICT.
+    </p>
+  </section>
+
+  <footer>
+    This guide is also available inside the app at <strong>/help</strong>, where it will stay up to date as
+    features change. This document is a point-in-time copy for reference offline or outside the app.
+  </footer>
+
+</div>
+</body>
+</html>
