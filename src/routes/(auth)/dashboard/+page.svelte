@@ -97,7 +97,7 @@
             href: '/audit-logs',
             icon: FileClock,
             accent: 'primary',
-            status: 'soon'
+            status: 'active'
         }
     ];
 

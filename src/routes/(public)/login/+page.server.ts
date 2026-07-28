@@ -4,6 +4,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { ldapAuthenticate } from '$lib/ldap';
 import { isAuthorizedDn } from '$lib/server/ldap';
+import { writeAuditLog } from '$lib/server/audit';
 
 function sign(data: string) {
     return createHmac('sha256', env.SESSION_SECRET)
@@ -22,6 +23,14 @@ export const actions: Actions = {
         
 
         if (ldapUser?.error) {
+            await writeAuditLog({
+                actor: username,
+                action: 'login-failed',
+                targetSam: username,
+                success: false,
+                error: ldapUser.error
+            });
+
             return fail(401, { error: ldapUser.error });
         }
 
@@ -30,6 +39,15 @@ export const actions: Actions = {
         // authorization for the whole app hinges on that scope, so it's
         // worth verifying explicitly rather than trusting it implicitly.
         if (!isAuthorizedDn(ldapUser.dn)) {
+            await writeAuditLog({
+                actor: username,
+                action: 'login-denied',
+                targetSam: username,
+                targetDn: ldapUser.dn,
+                success: false,
+                error: 'Account authenticated but is not authorized to use this application.'
+            });
+
             return fail(403, { error: 'Your account is not authorized to use this application.' });
         }
 
@@ -53,6 +71,16 @@ export const actions: Actions = {
             secure: false,
             sameSite: 'strict'
         });
+
+        await writeAuditLog({
+            actor: username,
+            action: 'login',
+            targetSam: username,
+            targetDn: ldapUser.dn,
+            success: true,
+            details: { name: ldapUser.name, email: ldapUser.email }
+        });
+
         return { success: true };
     }
 };

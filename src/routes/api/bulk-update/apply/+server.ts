@@ -8,7 +8,7 @@ import {
     toArray,
     toSingle
 } from '$lib/server/ad-utils';
-import { writeAuditLog, type AuditLogEntry } from '$lib/server/audit';
+import { writeAuditLogs, type AuditEvent } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
 
 interface ApplyRequestBody {
@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     const client = await getADClient();
     const results: ApplyResult[] = [];
-    const auditEntries: AuditLogEntry[] = [];
+    const auditEntries: AuditEvent[] = [];
 
     try {
         // Processed sequentially rather than in parallel to avoid hammering
@@ -89,11 +89,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 results.push({ dn, sAMAccountName, displayName, success: true });
 
                 auditEntries.push({
-                    timestamp: new Date().toISOString(),
                     actor,
-                    action: 'bulk-update',
+                    action: 'user-updated',
                     targetDn: dn,
                     targetSam: sAMAccountName,
+                    targetDisplayName: displayName,
                     attribute,
                     oldValue,
                     newValue: value,
@@ -111,11 +111,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 });
 
                 auditEntries.push({
-                    timestamp: new Date().toISOString(),
                     actor,
-                    action: 'bulk-update',
+                    action: 'user-updated',
                     targetDn: dn,
                     targetSam: sAMAccountName,
+                    targetDisplayName: displayName,
                     attribute,
                     oldValue,
                     newValue: value,
@@ -125,7 +125,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             }
         }
 
-        await writeAuditLog(auditEntries);
+        await writeAuditLogs(auditEntries);
 
         return json(results);
     } finally {

@@ -5,7 +5,7 @@ import { escapeLdapFilter, getBoundClient, ACCOUNTDISABLE } from '$lib/server/ld
 export async function setUserEnabled(
     sAMAccountName: string,
     enabled: boolean
-) {
+): Promise<{ dn: string }> {
     const client = await getBoundClient();
 
     try {
@@ -46,12 +46,14 @@ export async function setUserEnabled(
         })
 );
 
+        return { dn };
+
     } finally {
         await client.unbind();
     }
 }
 
-export async function unlockUser(username: string) {
+export async function unlockUser(username: string): Promise<{ dn: string }> {
     const client = await getBoundClient();
 
     try {
@@ -77,6 +79,8 @@ export async function unlockUser(username: string) {
                 })
             })
         );
+
+        return { dn };
 
     } finally {
         await client.unbind();

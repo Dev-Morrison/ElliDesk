@@ -1,10 +1,22 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { unlockUser } from '$lib/server/ad/users';
+import { writeAuditLog } from '$lib/server/audit';
+import type { SessionUser } from '$lib/types';
 
-export const POST: RequestHandler = async ({ params }) => {
+export const POST: RequestHandler = async ({ params, locals }) => {
+    const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
+
     try {
-        await unlockUser(params.samAccountName);
+        const { dn } = await unlockUser(params.samAccountName);
+
+        await writeAuditLog({
+            actor,
+            action: 'user-unlocked',
+            targetDn: dn,
+            targetSam: params.samAccountName,
+            success: true
+        });
 
         return json({
             success: true
@@ -13,9 +25,19 @@ export const POST: RequestHandler = async ({ params }) => {
     } catch (err) {
         console.error(err);
 
+        const message = err instanceof Error ? err.message : 'Unknown error';
+
+        await writeAuditLog({
+            actor,
+            action: 'user-unlocked',
+            targetSam: params.samAccountName,
+            success: false,
+            error: message
+        });
+
         return json({
             success: false,
-            error: err instanceof Error ? err.message : 'Unknown error'
+            error: message
         }, { status: 500 });
     }
 };

@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"ldapts": "^8.1.7",
-		"lucide-svelte": "^1.0.1"
+		"lucide-svelte": "^1.0.1",
+		"mysql2": "^3.23.2"
 	}
 }

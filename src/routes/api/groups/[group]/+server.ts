@@ -12,6 +12,8 @@ import {
     parseGroupType,
     buildChange
 } from '$lib/server/ldap';
+import { writeAuditLog } from '$lib/server/audit';
+import type { SessionUser } from '$lib/types';
 
 const GROUP_ATTRIBUTES = [
     'cn',
@@ -85,12 +87,13 @@ export const GET: RequestHandler = async ({ params }) => {
     }
 };
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
+export const PATCH: RequestHandler = async ({ params, request, locals }) => {
     const sAMAccountName = params.group as string;
     const body = await request.json();
+    const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
     try {
-        await withLdapClient(async (client) => {
+        const dn = await withLdapClient(async (client) => {
             const dn = await findGroupDN(client, sAMAccountName);
             if (!dn) throw error(404, 'Group not found');
 
@@ -125,31 +128,89 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
             if (changes.length > 0) {
                 await client.modify(dn, changes);
             }
+
+            return dn;
+        });
+
+        await writeAuditLog({
+            actor,
+            action: 'group-updated',
+            targetDn: dn,
+            targetSam: sAMAccountName,
+            success: true,
+            details: body
         });
 
         return json({ success: true });
     } catch (err) {
-        if (err && typeof err === 'object' && 'status' in err) throw err;
+        if (err && typeof err === 'object' && 'status' in err) {
+            await writeAuditLog({
+                actor,
+                action: 'group-updated',
+                targetSam: sAMAccountName,
+                success: false,
+                error: 'Group not found'
+            });
+            throw err;
+        }
         console.error('Failed to update group:', err);
+
+        await writeAuditLog({
+            actor,
+            action: 'group-updated',
+            targetSam: sAMAccountName,
+            success: false,
+            error: err instanceof Error ? err.message : 'Unknown error'
+        });
+
         throw error(500, 'Failed to update group');
     }
 };
 
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async ({ params, locals }) => {
     const sAMAccountName = params.group as string;
+    const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
     try {
-        await withLdapClient(async (client) => {
+        const dn = await withLdapClient(async (client) => {
             const dn = await findGroupDN(client, sAMAccountName);
             if (!dn) throw error(404, 'Group not found');
 
             await client.del(dn);
+
+            return dn;
+        });
+
+        await writeAuditLog({
+            actor,
+            action: 'group-deleted',
+            targetDn: dn,
+            targetSam: sAMAccountName,
+            success: true
         });
 
         return json({ success: true });
     } catch (err) {
-        if (err && typeof err === 'object' && 'status' in err) throw err;
+        if (err && typeof err === 'object' && 'status' in err) {
+            await writeAuditLog({
+                actor,
+                action: 'group-deleted',
+                targetSam: sAMAccountName,
+                success: false,
+                error: 'Group not found'
+            });
+            throw err;
+        }
         console.error('Failed to delete group:', err);
+
+        await writeAuditLog({
+            actor,
+            action: 'group-deleted',
+            targetSam: sAMAccountName,
+            success: false,
+            error: err instanceof Error ? err.message : 'Unknown error'
+        });
+
         throw error(500, 'Failed to delete group');
     }
 };

@@ -3,7 +3,7 @@ import { ldapAddUser } from '$lib/ldap';
 import type { LdapAddUserParams, SessionUser } from '$lib/types';
 import { AD_CONFIG, getGroupsForDepartment, getOUForDepartment } from '$lib/config/adconfig';
 import { fail } from '@sveltejs/kit';
-import { writeAuditLog, type NewUserAuditLogEntry } from '$lib/server/audit';
+import { writeAuditLog } from '$lib/server/audit';
 
 export const load = (async () => {
     return {};
@@ -49,61 +49,36 @@ export const actions: Actions = {
             baseDN: 'DC=BOS,DC=local'
         };
 
-        // Declared per-request (not at module scope) so concurrent
-        // submissions never share or leak into each other's audit entries.
-        const auditEntries: NewUserAuditLogEntry[] = [];
+        const newUserDn = `CN=${displayName},${params.targetOU}`;
 
         try {
             await ldapAddUser(params);
-
-            auditEntries.push({
-                timestamp: new Date().toISOString(),
-                actor,
-                action: 'user-creation',
-                newUserDn: `CN=${displayName},${params.targetOU}`,
-                newUserSamAccountName: username,
-                newUserDisplayName: displayName,
-                newUserDepartment: formattedDepartment,
-                success: true
-            });
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Unknown error';
 
-            // Best-effort audit of the failure too — a logging problem here
-            // shouldn't hide the real error from the admin, so it's isolated
-            // in its own try/catch.
-            try {
-                await writeAuditLog([
-                    {
-                        timestamp: new Date().toISOString(),
-                        actor,
-                        action: 'user-creation',
-                        newUserDn: `CN=${displayName},${params.targetOU}`,
-                        newUserSamAccountName: username,
-                        newUserDisplayName: displayName,
-                        newUserDepartment: formattedDepartment,
-                        success: false
-                    }
-                ]);
-            } catch (auditErr) {
-                console.error('Failed to write audit log for failed user creation:', auditErr);
-            }
+            await writeAuditLog({
+                actor,
+                action: 'user-created',
+                targetDn: newUserDn,
+                targetSam: username,
+                targetDisplayName: displayName,
+                success: false,
+                error: message,
+                details: { department: formattedDepartment, domain }
+            });
 
             return fail(500, { success: false, message: 'Failed to add user: ' + message });
         }
 
-        try {
-            await writeAuditLog(auditEntries);
-        } catch (auditErr) {
-            console.error('User was created, but writing the audit log failed:', auditErr);
-
-            // The user genuinely was created — don't turn this into an
-            // error page over a logging problem, just soften the message.
-            return {
-                success: true,
-                message: 'User added successfully, but the audit log entry could not be recorded.'
-            };
-        }
+        await writeAuditLog({
+            actor,
+            action: 'user-created',
+            targetDn: newUserDn,
+            targetSam: username,
+            targetDisplayName: displayName,
+            success: true,
+            details: { department: formattedDepartment, domain }
+        });
 
         return { success: true, message: 'User added successfully' };
     }

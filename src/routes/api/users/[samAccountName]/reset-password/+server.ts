@@ -1,6 +1,8 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { withSecureLdapClient, searchDN, escapeLdapFilter, toSingle, buildChange } from '$lib/server/ldap';
+import { writeAuditLog } from '$lib/server/audit';
+import type { SessionUser } from '$lib/types';
 
 // AD expects the new password as a UTF-16LE-encoded, quote-wrapped string
 // when set via the `unicodePwd` attribute.
@@ -24,9 +26,10 @@ function validatePassword(password: string): string | null {
     return null;
 }
 
-export const POST: RequestHandler = async ({ params, request }) => {
+export const POST: RequestHandler = async ({ params, request, locals }) => {
     const sAMAccountName = params.samAccountName as string;
     const body = await request.json().catch(() => ({}));
+    const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
     const newPassword: string = body.newPassword ?? '';
     const forceChangeAtLogon: boolean = Boolean(body.forceChangeAtLogon);
@@ -38,7 +41,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
     }
 
     try {
-        await withSecureLdapClient(async (client) => {
+        const targetDn = await withSecureLdapClient(async (client) => {
             const { searchEntries } = await client.search(searchDN(), {
                 scope: 'sub',
                 filter: `(&(objectCategory=person)(objectClass=user)(sAMAccountName=${escapeLdapFilter(sAMAccountName)}))`,
@@ -63,14 +66,45 @@ export const POST: RequestHandler = async ({ params, request }) => {
             }
 
             await client.modify(dn, changes);
+
+            return dn;
+        });
+
+        // The password itself is never recorded — only that a reset happened.
+        await writeAuditLog({
+            actor,
+            action: 'password-reset',
+            targetDn,
+            targetSam: sAMAccountName,
+            success: true,
+            details: { forceChangeAtLogon, unlockAccount }
         });
 
         return json({ success: true });
     } catch (err) {
-        if (err && typeof err === 'object' && 'status' in err) throw err;
+        if (err && typeof err === 'object' && 'status' in err) {
+            // The only HttpError this can throw is the 404 above.
+            await writeAuditLog({
+                actor,
+                action: 'password-reset',
+                targetSam: sAMAccountName,
+                success: false,
+                error: 'User not found'
+            });
+
+            throw err;
+        }
 
         console.error('Failed to reset password:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';
+
+        await writeAuditLog({
+            actor,
+            action: 'password-reset',
+            targetSam: sAMAccountName,
+            success: false,
+            error: message
+        });
 
         throw error(
             500,
