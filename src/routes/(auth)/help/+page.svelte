@@ -186,8 +186,7 @@
                     New accounts are created <strong>disabled and without a password</strong> on purpose. Use
                     Reset Password afterward to set an initial password — that's also what enables the account
                     for use. Because Reset Password is temporarily unavailable (see
-                    <a href="#known-issues">Known Issues</a>), newly created accounts can't be activated until
-                    that's resolved either.
+                    <a href="#known-issues">Known Issues</a>), however new accounts can be enable and password set when setting up the account. This is a temporary workaround until the LDAPS certificate is installed.
                 </span>
             </div>
         </section>
@@ -355,8 +354,7 @@
             <p>
                 If something looks wrong, isn't reflecting a change you expect, or you're not sure whether an
                 action is safe to take (especially Offboarding or Bulk Update), check the Audit Logs page
-                first — it usually explains what actually happened. Otherwise, reach out to whoever administers
-                ElliDesk in ICT.
+                first — it usually explains what actually happened. Otherwise, reach out to  <a href="mailto:emorrison@bsj.org.jm">Elliot Morrison</a>.
             </p>
         </section>
 
