@@ -89,6 +89,7 @@ export function parseGroupType(raw: string | undefined): {
 export async function withLdapClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
     const client = new Client({
         url: env.LDAP_URL
+        
     });
 
     try {
@@ -174,6 +175,14 @@ export function buildChange(
  * doesn't, StartTLS (and ldaps://) will both fail identically, and that
  * has to be fixed on the DC/PKI side, not here.
  *
+ * Uses LDAP_SECURE_URL if set, falling back to LDAP_URL otherwise. These
+ * only need to differ if the domain-wide alias (e.g. BOS.local, which can
+ * round-robin across multiple DCs) doesn't match the hostname the LDAPS
+ * certificate was actually issued for — TLS hostname verification fails
+ * against an alias even when the cert itself is trusted. Point
+ * LDAP_SECURE_URL at that specific DC's hostname in that case, while
+ * everything else keeps using the round-robin alias via LDAP_URL.
+ *
  * Set LDAP_TLS_REJECT_UNAUTHORIZED=false in env only if the DC is using
  * a self-signed or internal-CA certificate that isn't in Node's trust
  * store — prefer adding the CA cert via NODE_EXTRA_CA_CERTS instead,
@@ -181,7 +190,7 @@ export function buildChange(
  */
 export async function withSecureLdapClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
     const client = new Client({
-        url: env.LDAP_URL
+        url: env.LDAP_SECURE_URL || env.LDAP_URL
     });
 
     try {
