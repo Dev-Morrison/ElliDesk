@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ADUser } from '$lib/types';
-    import { fileTimeToDate } from '$lib/index';
+    import { fileTimeToDate, copyToClipboard } from '$lib/index';
     import Navbar from '$lib/components/Navbar.svelte';
     import { invalidateAll } from '$app/navigation';
   import StatBoard from '$lib/components/StatBoard.svelte';
@@ -144,7 +144,7 @@
 
     async function copyPassword() {
         try {
-            await navigator.clipboard.writeText(resetPassword);
+            await copyToClipboard(resetPassword);
             copied = true;
         } catch {
             copied = false;

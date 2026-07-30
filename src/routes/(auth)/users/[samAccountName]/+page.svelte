@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fileTimeToDate } from "$lib";
+  import { fileTimeToDate, copyToClipboard } from "$lib";
   import Navbar from "$lib/components/Navbar.svelte";
   import { KeyRound, Copy, Check, RefreshCw, ArrowLeft } from "lucide-svelte";
 
@@ -64,7 +64,7 @@
 
   async function copyPassword() {
     try {
-      await navigator.clipboard.writeText(resetPassword);
+      await copyToClipboard(resetPassword);
       copied = true;
     } catch {
       copied = false;
