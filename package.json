@@ -28,6 +28,7 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"csv-parse": "^7.0.2",
 		"ldapts": "^8.1.7",
 		"lucide-svelte": "^1.0.1",
 		"mysql2": "^3.23.2"

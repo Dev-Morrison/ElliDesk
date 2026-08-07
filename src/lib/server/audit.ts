@@ -21,7 +21,8 @@ export type AuditAction =
     | 'computer-enabled'
     | 'computer-disabled'
     | 'group-deleted'
-    | 'user-offboarded';
+    | 'user-offboarded'
+    | 'event-log-imported';
 
 export interface AuditEvent {
     actor: string;

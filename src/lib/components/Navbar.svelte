@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, Menu, HelpCircle } from 'lucide-svelte';
+  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, ScrollText, Menu, HelpCircle } from 'lucide-svelte';
 
   let { username }: { username: string } = $props();
 
@@ -11,6 +11,7 @@
     { href: '/ous', label: 'OUs', icon: FolderKanban },
     { href: '/computers', label: 'Computers', icon: Monitor },
     { href: '/maintenance', label: 'Maintenance', icon: Wrench },
+    { href: '/event-logs', label: 'Event Logs', icon: ScrollText },
     { href: '/audit-logs', label: 'Audit Logs', icon: FileClock }
   ];
 

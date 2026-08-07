@@ -14,6 +14,7 @@
         FolderKanban,
         ShieldCheck,
         FileClock,
+        ScrollText,
         AlertTriangle,
         ArrowRight
     } from 'lucide-svelte';
@@ -89,6 +90,14 @@
             href: '/policies/password',
             icon: ShieldCheck,
             accent: 'warning',
+            status: 'active'
+        },
+        {
+            title: 'Event Logs',
+            description: 'Browse imported Windows Event Logs from the domain controller.',
+            href: '/event-logs',
+            icon: ScrollText,
+            accent: 'secondary',
             status: 'active'
         },
         {
