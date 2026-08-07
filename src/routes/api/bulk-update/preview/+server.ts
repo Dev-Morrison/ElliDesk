@@ -10,6 +10,7 @@ import {
     toSingle,
     ouFromDN
 } from '$lib/server/ad-utils';
+import { requireCapability } from '$lib/server/permissions';
 
 interface OUScope {
     mode: 'ou';
@@ -39,7 +40,9 @@ interface PreviewTarget {
 
 const CANDIDATE_ATTRIBUTES = ['distinguishedName', 'sAMAccountName', 'displayName', 'memberOf'];
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+    requireCapability(locals, 'maintenance.bulk-update');
+
     const body = (await request.json()) as PreviewRequestBody;
     const { scope, attribute, value } = body;
 

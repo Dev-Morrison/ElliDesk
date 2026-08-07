@@ -1,18 +1,28 @@
 <script lang="ts">
-  import { fileTimeToDate, copyToClipboard } from "$lib";
+  import { fileTimeToDate, copyToClipboard, extractErrorMessage } from "$lib";
   import Navbar from "$lib/components/Navbar.svelte";
   import { KeyRound, Copy, Check, RefreshCw, ArrowLeft } from "lucide-svelte";
+  import { showNotice } from "$lib/stores/notice.svelte";
 
   let { data } = $props();
 
   let user = data.selectedUser;
 
+  const canManageUsers = $derived(
+    (data.permissions.capabilities as string[]).includes("users.manage")
+  );
+
   let activeTab = $state("general");
 
   async function action(name: string) {
-    await fetch(`/api/users/${user.sAMAccountName}/${name}`, {
+    const res = await fetch(`/api/users/${user.sAMAccountName}/${name}`, {
       method: "POST",
     });
+
+    if (!res.ok) {
+      showNotice(await extractErrorMessage(res));
+      return;
+    }
 
     location.reload();
   }
@@ -122,26 +132,28 @@
       </p>
     </div>
 
-    <div class="flex gap-2">
-      {#if user.userAccountControl & 2}
-        <button class="btn btn-success" type="button" onclick={() => action("enable")}>
-          Enable
-        </button>
-      {:else}
-        <button class="btn btn-error" type="button" onclick={() => action("disable")}>
-          Disable
-        </button>
-      {/if}
+    {#if canManageUsers}
+      <div class="flex gap-2">
+        {#if user.userAccountControl & 2}
+          <button class="btn btn-success" type="button" onclick={() => action("enable")}>
+            Enable
+          </button>
+        {:else}
+          <button class="btn btn-error" type="button" onclick={() => action("disable")}>
+            Disable
+          </button>
+        {/if}
 
-      <button class="btn btn-warning" type="button" onclick={() => action("unlock")}>
-        Unlock
-      </button>
+        <button class="btn btn-warning" type="button" onclick={() => action("unlock")}>
+          Unlock
+        </button>
 
-      <button class="btn btn-primary" type="button" onclick={openResetModal}>
-        <KeyRound size={16} />
-        Reset Password
-      </button>
-    </div>
+        <button class="btn btn-primary" type="button" onclick={openResetModal}>
+          <KeyRound size={16} />
+          Reset Password
+        </button>
+      </div>
+    {/if}
   </div>
 
   <div role="tablist" class="tabs tabs-lift">

@@ -2,13 +2,13 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import {
     withLdapClient,
-    searchDN,
     toArray,
     toSingle,
     cnFromDN,
     ouFromDN,
     parseGroupType
 } from '$lib/server/ldap';
+import { requireAnyCapability, allowedSearchBases } from '$lib/server/permissions';
 
 export interface ADGroupListItem {
     cn: string;
@@ -32,33 +32,54 @@ const GROUP_ATTRIBUTES = [
     'managedBy'
 ];
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+    requireAnyCapability(locals, ['groups.view', 'groups.manage']);
+
+    const bases = allowedSearchBases(locals.permissions.domainScope);
+
+    if (bases.length === 0) {
+        return { groups: [], totalGroups: 0, securityGroups: 0, distributionGroups: 0 };
+    }
+
     try {
         const groups: ADGroupListItem[] = await withLdapClient(async (client) => {
-            const { searchEntries } = await client.search(searchDN(), {
-                scope: 'sub',
-                filter: '(objectCategory=group)',
-                attributes: GROUP_ATTRIBUTES,
-                paged: true,
-                sizeLimit: 0
-            });
+            const seen = new Set<string>();
+            const results: ADGroupListItem[] = [];
 
-            return searchEntries.map((entry) => {
-                const dn = toSingle(entry.distinguishedName) ?? (entry.dn as string);
-                const { category, scope } = parseGroupType(toSingle(entry.groupType));
+            // One search per allowed domain base - 'all' scope collapses to
+            // a single global base already.
+            for (const base of bases) {
+                const { searchEntries } = await client.search(base, {
+                    scope: 'sub',
+                    filter: '(objectCategory=group)',
+                    attributes: GROUP_ATTRIBUTES,
+                    paged: true,
+                    sizeLimit: 0
+                });
 
-                return {
-                    cn: toSingle(entry.cn) ?? '',
-                    sAMAccountName: toSingle(entry.sAMAccountName) ?? '',
-                    description: toSingle(entry.description),
-                    category,
-                    scope,
-                    ou: ouFromDN(dn),
-                    distinguishedName: dn,
-                    memberCount: toArray(entry.member).length,
-                    managedBy: cnFromDN(toSingle(entry.managedBy))
-                };
-            });
+                for (const entry of searchEntries) {
+                    const dn = toSingle(entry.distinguishedName) ?? (entry.dn as string);
+                    const key = dn.toLowerCase();
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+
+                    const { category, scope } = parseGroupType(toSingle(entry.groupType));
+
+                    results.push({
+                        cn: toSingle(entry.cn) ?? '',
+                        sAMAccountName: toSingle(entry.sAMAccountName) ?? '',
+                        description: toSingle(entry.description),
+                        category,
+                        scope,
+                        ou: ouFromDN(dn),
+                        distinguishedName: dn,
+                        memberCount: toArray(entry.member).length,
+                        managedBy: cnFromDN(toSingle(entry.managedBy))
+                    });
+                }
+            }
+
+            return results;
         });
 
         groups.sort((a, b) => a.cn.localeCompare(b.cn));

@@ -11,9 +11,15 @@
         Calendar,
         Clock
     } from 'lucide-svelte';
+    import { extractErrorMessage } from '$lib/index';
+    import { showNotice } from '$lib/stores/notice.svelte';
 
     // Expected `data` from +page.server.ts: { group: ADGroupDetail }
     let { data } = $props();
+
+    const canManageGroups = $derived(
+        (data.permissions.capabilities as string[]).includes('groups.manage')
+    );
 
     let deleting = $state(false);
     let showDeleteConfirm = $state(false);
@@ -48,12 +54,14 @@
             });
 
             if (!res.ok) {
-                throw new Error('Failed to delete group.');
+                showNotice(await extractErrorMessage(res, 'Failed to delete group.'));
+                return;
             }
 
             await goto('/groups');
         } catch (err) {
-            console.error(err);
+            showNotice(err instanceof Error ? err.message : 'Failed to delete group.');
+        } finally {
             deleting = false;
             showDeleteConfirm = false;
         }
@@ -88,20 +96,22 @@
             </div>
         </div>
 
-        <div class="flex gap-2">
-            <a href={`/groups/${data.group.sAMAccountName}/members`} class="btn btn-primary">
-                <UserCog size={16} />
-                Manage Members
-            </a>
-            <a href={`/groups/${data.group.sAMAccountName}/edit`} class="btn btn-ghost">
-                <Pencil size={16} />
-                Edit
-            </a>
-            <button class="btn btn-ghost text-error" onclick={() => (showDeleteConfirm = true)} type="button">
-                <Trash2 size={16} />
-                Delete
-            </button>
-        </div>
+        {#if canManageGroups}
+            <div class="flex gap-2">
+                <a href={`/groups/${data.group.sAMAccountName}/edit`} class="btn btn-primary">
+                    <UserCog size={16} />
+                    Manage Members
+                </a>
+                <a href={`/groups/${data.group.sAMAccountName}/members`} class="btn btn-ghost">
+                    <Pencil size={16} />
+                    Edit
+                </a>
+                <button class="btn btn-ghost text-error" onclick={() => (showDeleteConfirm = true)} type="button">
+                    <Trash2 size={16} />
+                    Delete
+                </button>
+            </div>
+        {/if}
 
     </div>
 
@@ -175,9 +185,11 @@
                         </div>
                     </div>
 
-                    <a href={`/groups/${data.group.sAMAccountName}/members`} class="btn btn-outline btn-sm w-full">
-                        View &amp; Manage Members
-                    </a>
+                    {#if canManageGroups}
+                        <a href={`/groups/${data.group.sAMAccountName}/edit`} class="btn btn-outline btn-sm w-full">
+                            View &amp; Manage Members
+                        </a>
+                    {/if}
 
                 </div>
             </div>

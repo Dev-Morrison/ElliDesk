@@ -22,7 +22,12 @@ export type AuditAction =
     | 'computer-disabled'
     | 'group-deleted'
     | 'user-offboarded'
-    | 'event-log-imported';
+    | 'event-log-imported'
+    | 'role-created'
+    | 'role-updated'
+    | 'role-deleted'
+    | 'role-assignment-created'
+    | 'role-assignment-deleted';
 
 export interface AuditEvent {
     actor: string;

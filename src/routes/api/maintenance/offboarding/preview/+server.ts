@@ -4,12 +4,15 @@ import { withLdapClient, toSingle, toArray, ouFromDN, cnFromDN, ACCOUNTDISABLE }
 import { isInProtectedGroup } from '$lib/server/ad-utils';
 import { RetentionOU } from '$lib/config/adconfig';
 import type { OffboardingTarget } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
 interface PreviewRequestBody {
     dns: string[];
 }
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+    requireCapability(locals, 'maintenance.offboard');
+
     const { dns } = (await request.json()) as PreviewRequestBody;
 
     if (!dns || dns.length === 0) {

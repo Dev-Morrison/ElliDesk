@@ -12,6 +12,7 @@ export const AD_CONFIG = {
     "bsj.org.jm": {
       server: "BOS.local",
       defaultUPN: "bsj.org.jm",
+      baseOU: `${EntityBSJ},${DomainDN}`,
       departments: {
         ICT: {
           ou: `OU=MIS_Staff,OU=MIS,${DomainDN}`,
@@ -148,6 +149,7 @@ export const AD_CONFIG = {
     "ncra.org.jm": {
       server: "BOS.local",
       defaultUPN: "ncra.org.jm",
+      baseOU: `OU=ENTITY - NCRA,${DomainDN}`,
       departments: {
         MAIN_OFFICE: {
           ou: "OU=USERS - MAIN OFFICE,OU=ENTITY - NCRA,DC=BOS,DC=local",
@@ -168,6 +170,7 @@ export const AD_CONFIG = {
     "ncbj.org.jm": {
       server: "BOS.local",
       defaultUPN: "ncbj.org.jm",
+      baseOU: `OU=ENTITY - NCBJ,${DomainDN}`,
       departments: {
         NCBJ_Staff: {
           ou: "OU=USERS,OU=ENTITY - NCBJ,DC=BOS,DC=local",
@@ -181,6 +184,7 @@ export const AD_CONFIG = {
     "hsra.org.jm": {
       server: "BOS.local",
       defaultUPN: "hsra.org.jm",
+      baseOU: `OU=ENTITY - HSRA,${DomainDN}`,
       departments: {
         HSRA_Staff: {
           ou: "OU=USERS,OU=ENTITY - HSRA,DC=BOS,DC=local",

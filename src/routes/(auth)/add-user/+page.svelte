@@ -10,7 +10,9 @@
     let middleName = $state('');
     let surname = $state('');
     let username = $state('');
-    let domain = $state('');
+    // Auto-select when there's only one domain in scope — no reason to make
+    // a restricted admin click a dropdown with a single option.
+    let domain = $state(data.allowedDomains.length === 1 ? data.allowedDomains[0] : '');
     let department = $state('');
 
     // Derived email based on username + domain
@@ -147,7 +149,7 @@
         middleName = '';
         surname = '';
         username = '';
-        domain = '';
+        domain = data.allowedDomains.length === 1 ? data.allowedDomains[0] : '';
         department = '';
         usernameStatus = null;
         resultModal.close();
@@ -197,10 +199,9 @@
                         required
                     >
                         <option value="" disabled selected>Select Domain</option>
-                        <option>bsj.org.jm</option>
-                        <option>ncra.org.jm</option>
-                        <option>ncbj.org.jm</option>
-                        <option>hsra.org.jm</option>
+                        {#each data.allowedDomains as d}
+                            <option value={d}>{d}</option>
+                        {/each}
                     </select>
                 </div>
 

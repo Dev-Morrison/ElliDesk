@@ -10,6 +10,7 @@ import {
     ouFromDN,
     parseGroupType
 } from '$lib/server/ldap';
+import { requireAnyCapability, dnWithinScope } from '$lib/server/permissions';
 
 const GROUP_ATTRIBUTES = [
     'cn',
@@ -24,7 +25,9 @@ const GROUP_ATTRIBUTES = [
     'whenChanged'
 ];
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+    requireAnyCapability(locals, ['groups.view', 'groups.manage']);
+
     const sAMAccountName = params.group;
 
     try {
@@ -39,6 +42,12 @@ export const load: PageServerLoad = async ({ params }) => {
 
             const entry = searchEntries[0];
             const dn = toSingle(entry.distinguishedName) ?? (entry.dn as string);
+
+            // Out-of-scope reads look identical to "doesn't exist" - matches
+            // the users-detail pattern so a scoped admin can't confirm
+            // another domain's groups even exist.
+            if (!dnWithinScope(dn, locals.permissions.domainScope)) return null;
+
             const { category, scope } = parseGroupType(toSingle(entry.groupType));
             const managedByDN = toSingle(entry.managedBy);
 

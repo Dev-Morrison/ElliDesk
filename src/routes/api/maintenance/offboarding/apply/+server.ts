@@ -14,6 +14,7 @@ import { isInProtectedGroup } from '$lib/server/ad-utils';
 import { RetentionOU } from '$lib/config/adconfig';
 import { writeAuditLogs, type AuditEvent } from '$lib/server/audit';
 import type { SessionUser, OffboardResult } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
 interface ApplyRequestBody {
     targets: string[];
@@ -23,6 +24,8 @@ interface ApplyRequestBody {
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+    requireCapability(locals, 'maintenance.offboard');
+
     const { targets, removeGroups, disable, moveToRetention } = (await request.json()) as ApplyRequestBody;
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 

@@ -3,6 +3,7 @@ import { json, error } from '@sveltejs/kit';
 import { withSecureLdapClient, searchDN, escapeLdapFilter, toSingle, buildChange } from '$lib/server/ldap';
 import { writeAuditLog } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
+import { requireCapability, dnWithinScope } from '$lib/server/permissions';
 
 // AD expects the new password as a UTF-16LE-encoded, quote-wrapped string
 // when set via the `unicodePwd` attribute.
@@ -27,6 +28,8 @@ function validatePassword(password: string): string | null {
 }
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
+    requireCapability(locals, 'users.manage');
+
     const sAMAccountName = params.samAccountName as string;
     const body = await request.json().catch(() => ({}));
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
@@ -53,6 +56,10 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
             }
 
             const dn = toSingle(searchEntries[0].distinguishedName) ?? (searchEntries[0].dn as string);
+
+            if (!dnWithinScope(dn, locals.permissions.domainScope)) {
+                throw error(404, 'User not found');
+            }
 
             const changes = [buildChange('replace', 'unicodePwd', [encodePassword(newPassword)])];
 

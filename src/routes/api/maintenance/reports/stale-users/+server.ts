@@ -3,8 +3,11 @@ import { json, error } from '@sveltejs/kit';
 import { withLdapClient, searchDN, toSingle, ouFromDN, ACCOUNTDISABLE } from '$lib/server/ldap';
 import { fileTimeToDate } from '$lib/index';
 import type { StaleUserRow } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+    requireCapability(locals, 'maintenance.reports');
+
     const days = Math.max(1, parseInt(url.searchParams.get('days') ?? '90', 10) || 90);
 
     try {

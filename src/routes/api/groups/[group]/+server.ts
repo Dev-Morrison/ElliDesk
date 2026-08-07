@@ -14,6 +14,7 @@ import {
 } from '$lib/server/ldap';
 import { writeAuditLog } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
+import { requireAnyCapability, requireCapability, dnWithinScope } from '$lib/server/permissions';
 
 const GROUP_ATTRIBUTES = [
     'cn',
@@ -39,7 +40,9 @@ async function findGroupDN(client: any, sAMAccountName: string): Promise<string 
     return toSingle(searchEntries[0].distinguishedName) ?? (searchEntries[0].dn as string);
 }
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
+    requireAnyCapability(locals, ['groups.view', 'groups.manage']);
+
     const sAMAccountName = params.group as string;
 
     try {
@@ -54,6 +57,9 @@ export const GET: RequestHandler = async ({ params }) => {
 
             const entry = searchEntries[0];
             const dn = toSingle(entry.distinguishedName) ?? (entry.dn as string);
+
+            if (!dnWithinScope(dn, locals.permissions.domainScope)) return null;
+
             const { category, scope } = parseGroupType(toSingle(entry.groupType));
             const managedByDN = toSingle(entry.managedBy);
 
@@ -88,6 +94,8 @@ export const GET: RequestHandler = async ({ params }) => {
 };
 
 export const PATCH: RequestHandler = async ({ params, request, locals }) => {
+    requireCapability(locals, 'groups.manage');
+
     const sAMAccountName = params.group as string;
     const body = await request.json();
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
@@ -96,6 +104,13 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
         const dn = await withLdapClient(async (client) => {
             const dn = await findGroupDN(client, sAMAccountName);
             if (!dn) throw error(404, 'Group not found');
+
+            // Verify scope before the write, not just at lookup - a scoped
+            // admin must not be able to modify an out-of-scope group even
+            // if they already know its sAMAccountName.
+            if (!dnWithinScope(dn, locals.permissions.domainScope)) {
+                throw error(404, 'Group not found');
+            }
 
             const changes: Change[] = [];
 
@@ -168,6 +183,8 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 };
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
+    requireCapability(locals, 'groups.manage');
+
     const sAMAccountName = params.group as string;
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
@@ -175,6 +192,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
         const dn = await withLdapClient(async (client) => {
             const dn = await findGroupDN(client, sAMAccountName);
             if (!dn) throw error(404, 'Group not found');
+
+            if (!dnWithinScope(dn, locals.permissions.domainScope)) {
+                throw error(404, 'Group not found');
+            }
 
             await client.del(dn);
 

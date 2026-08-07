@@ -1,8 +1,11 @@
 import type { RequestHandler } from './$types';
 import { withLdapClient, searchDN, escapeLdapFilter, toSingle, toArray, ouFromDN, ACCOUNTDISABLE } from '$lib/server/ldap';
 import type { ADComputer } from '$lib/types';
+import { requireAnyCapability } from '$lib/server/permissions';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+    requireAnyCapability(locals, ['computers.view', 'computers.manage']);
+
     const search = url.searchParams.get('search')?.trim() ?? '';
 
     try {

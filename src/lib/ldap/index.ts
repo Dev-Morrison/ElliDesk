@@ -1,13 +1,20 @@
 import { Change, type SearchOptions, Attribute } from 'ldapts';
 import type { LdapAddUserParams } from '$lib/types';
 import { env } from '$env/dynamic/private';
-import { escapeLdapFilter, withLdapClient } from '$lib/server/ldap';
+import { escapeLdapFilter, withLdapClient, searchDN, toArray, toSingle } from '$lib/server/ldap';
 
 export async function ldapAuthenticate(username: string, password: string) {
     try {
         return await withLdapClient(async (client) => {
-            const { searchEntries } = await client.search(env.LDAP_SEARCH_DN_ICT, {
+            // Searches the whole directory, not just the ICT OU - finding a
+            // candidate account by username doesn't grant access on its own
+            // (the bind below still has to succeed with their real password),
+            // and *whether* an authenticated account is actually allowed to
+            // use the app is decided afterward by resolvePermissions(), which
+            // covers both ICT-OU staff and anyone else with a role assignment.
+            const { searchEntries } = await client.search(searchDN(), {
                 filter: `(sAMAccountName=${escapeLdapFilter(username)})`,
+                attributes: ['sAMAccountName', 'userPrincipalName', 'name', 'memberOf', 'distinguishedName']
             });
 
             if (searchEntries.length === 0) {
@@ -16,6 +23,7 @@ export async function ldapAuthenticate(username: string, password: string) {
                     email: null,
                     name: null,
                     dn: null,
+                    groups: [] as string[],
                     error: 'User not found'
                 };
             }
@@ -24,10 +32,11 @@ export async function ldapAuthenticate(username: string, password: string) {
                 await client.unbind();
                 await client.bind(searchEntries[0].dn, password);
                 return {
-                    username: searchEntries[0].sAMAccountName,
-                    email: searchEntries[0].userPrincipalName,
-                    name: searchEntries[0].name,
+                    username: toSingle(searchEntries[0].sAMAccountName) ?? null,
+                    email: toSingle(searchEntries[0].userPrincipalName) ?? null,
+                    name: toSingle(searchEntries[0].name) ?? null,
                     dn: searchEntries[0].dn as string,
+                    groups: toArray(searchEntries[0].memberOf),
                     error: null
                 };
             } catch (ex) {
@@ -37,6 +46,7 @@ export async function ldapAuthenticate(username: string, password: string) {
                     email: null,
                     name: null,
                     dn: null,
+                    groups: [] as string[],
                     error: 'LDAP authentication failed: Incorrect Credentials'
                 };
             }
@@ -48,6 +58,7 @@ export async function ldapAuthenticate(username: string, password: string) {
             email: null,
             name: null,
             dn: null,
+            groups: [] as string[],
             error: 'LDAP authentication failed: Internal error'
         };
     }

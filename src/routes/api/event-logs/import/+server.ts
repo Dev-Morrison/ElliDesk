@@ -10,6 +10,7 @@ import {
 } from '$lib/server/eventlogs';
 import { writeAuditLog } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
 const BATCH_SIZE = 500;
 
@@ -17,6 +18,8 @@ const BATCH_SIZE = 500;
 // than buffering the whole file (which could be very large — years of
 // Security.evtx exports) into memory or blocking one opaque request.
 export const POST: RequestHandler = async ({ request, locals }) => {
+    requireCapability(locals, 'event-logs.import');
+
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
     const formData = await request.formData();

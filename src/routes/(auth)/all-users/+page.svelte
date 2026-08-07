@@ -1,11 +1,16 @@
 <script lang="ts">
     import type { ADUser } from '$lib/types';
-    import { fileTimeToDate, copyToClipboard } from '$lib/index';
+    import { fileTimeToDate, copyToClipboard, extractErrorMessage } from '$lib/index';
     import Navbar from '$lib/components/Navbar.svelte';
     import { invalidateAll } from '$app/navigation';
   import StatBoard from '$lib/components/StatBoard.svelte';
     import { Copy, Check, RefreshCw } from 'lucide-svelte';
+    import { showNotice } from '$lib/stores/notice.svelte';
     let { data } = $props();
+
+    const canManageUsers = $derived(
+        (data.permissions.capabilities as string[]).includes('users.manage')
+    );
 
     let search = $state("");
     let statusFilter = $state<"all" | "enabled" | "disabled">("all");
@@ -87,7 +92,7 @@
         });
 
         if (!res.ok) {
-            alert(await res.text());
+            showNotice(await extractErrorMessage(res));
             return;
         }
 
@@ -357,39 +362,43 @@
                                         </a>
                                     </li>
 
-                                    {#if user.enabled}
+                                    {#if canManageUsers}
+
+                                        {#if user.enabled}
+
+                                            <li>
+                                                <button onclick={() => action(user,"disable")}>
+                                                    Disable
+                                                </button>
+                                            </li>
+
+                                        {:else}
+
+                                            <li>
+                                                <button onclick={() => action(user,"enable")}>
+                                                    Enable
+                                                </button>
+                                            </li>
+
+                                        {/if}
+
+                                        {#if user.locked}
+
+                                            <li>
+                                                <button onclick={() => action(user,"unlock")}>
+                                                    Unlock
+                                                </button>
+                                            </li>
+
+                                        {/if}
 
                                         <li>
-                                            <button onclick={() => action(user,"disable")}>
-                                                Disable
-                                            </button>
-                                        </li>
-
-                                    {:else}
-
-                                        <li>
-                                            <button onclick={() => action(user,"enable")}>
-                                                Enable
+                                            <button onclick={() => openResetModal(user)}>
+                                                Reset Password
                                             </button>
                                         </li>
 
                                     {/if}
-
-                                    {#if user.locked}
-
-                                        <li>
-                                            <button onclick={() => action(user,"unlock")}>
-                                                Unlock
-                                            </button>
-                                        </li>
-
-                                    {/if}
-
-                                    <li>
-                                        <button onclick={() => openResetModal(user)}>
-                                            Reset Password
-                                        </button>
-                                    </li>
 
                                 </ul>
 

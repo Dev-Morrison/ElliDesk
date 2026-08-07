@@ -4,13 +4,24 @@ import type { LdapAddUserParams, SessionUser } from '$lib/types';
 import { AD_CONFIG, getGroupsForDepartment, getOUForDepartment } from '$lib/config/adconfig';
 import { fail } from '@sveltejs/kit';
 import { writeAuditLog } from '$lib/server/audit';
+import { requireCapability, domainAllowed } from '$lib/server/permissions';
 
-export const load = (async () => {
-    return {};
-}) satisfies PageServerLoad;
+export const load: PageServerLoad = async ({ locals }) => {
+    requireCapability(locals, 'users.manage');
+
+    const allDomains = Object.keys(AD_CONFIG.domains);
+    const allowedDomains =
+        locals.permissions.domainScope === 'all'
+            ? allDomains
+            : allDomains.filter((d) => locals.permissions.domainScope.includes(d));
+
+    return { allowedDomains };
+};
 
 export const actions: Actions = {
     default: async ({ request, locals }) => {
+        requireCapability(locals, 'users.manage');
+
         const actor = (locals as { user?: SessionUser })?.user?.username ?? 'system';
         const formData = await request.formData();
 
@@ -26,6 +37,16 @@ export const actions: Actions = {
             return fail(400, {
                 success: false,
                 message: 'Please fill in all required fields before submitting.'
+            });
+        }
+
+        // Defense in depth: the dropdown only ever offers domains within
+        // scope, but a restricted admin could still submit another value
+        // directly against the form action.
+        if (!domainAllowed(locals.permissions, domain)) {
+            return fail(403, {
+                success: false,
+                message: 'You are not authorized to create users in that domain.'
             });
         }
 

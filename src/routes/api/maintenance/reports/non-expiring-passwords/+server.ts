@@ -3,8 +3,11 @@ import { json, error } from '@sveltejs/kit';
 import { withLdapClient, searchDN, toSingle, ouFromDN, ACCOUNTDISABLE, DONT_EXPIRE_PASSWD } from '$lib/server/ldap';
 import { fileTimeToDate } from '$lib/index';
 import type { NonExpiringPasswordRow } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ locals }) => {
+    requireCapability(locals, 'maintenance.reports');
+
     try {
         const rows = await withLdapClient(async (client) => {
             const { searchEntries } = await client.search(searchDN(), {

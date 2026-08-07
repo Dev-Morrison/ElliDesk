@@ -3,6 +3,11 @@ export interface SessionUser {
     email: string;
     name: string;
     dn: string;
+    groups: string[]; // memberOf DNs at login time - used to resolve role-based permissions
+    // 'local' = the break-glass admin account (see $lib/server/localAdmin),
+    // authenticated against env vars instead of LDAP - always granted full
+    // access. 'ldap' accounts get access purely through role assignments.
+    authSource: 'ldap' | 'local';
     createdAt: number;
 }
 

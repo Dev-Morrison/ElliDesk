@@ -130,22 +130,6 @@ export async function getBoundClient(): Promise<Client> {
 }
 
 /**
- * The app's authorization boundary: only accounts whose DN falls under the
- * ICT OU (the same DN ldapAuthenticate searches within at login) are
- * treated as authorized users of anything behind the (auth) layout.
- *
- * Re-checked on every request (not just at login) against the DN embedded
- * in the signed session cookie, so a long-lived 8-hour session can't
- * outlive a narrowing of that scope without also being caught here. Fails
- * closed if LDAP_SEARCH_DN_ICT isn't configured.
- */
-export function isAuthorizedDn(dn: string | null | undefined): boolean {
-    const base = env.LDAP_SEARCH_DN_ICT;
-    if (!dn || !base) return false;
-    return dn.toLowerCase().endsWith(base.toLowerCase());
-}
-
-/**
  * ldapts' `client.modify()` requires actual `Change` instances wrapping
  * an `Attribute` instance — plain object literals with the matching
  * shape are rejected by its TypeScript types (and, in some versions, at

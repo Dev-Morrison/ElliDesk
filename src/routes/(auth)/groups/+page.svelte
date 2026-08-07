@@ -16,6 +16,8 @@
         ChevronRight,
         FolderTree
     } from 'lucide-svelte';
+    import { extractErrorMessage } from '$lib/index';
+    import { showNotice } from '$lib/stores/notice.svelte';
 
     // Expected shape from +page.server.ts:
     // {
@@ -38,6 +40,10 @@
     // }
 
     let { data } = $props();
+
+    const canManageGroups = $derived(
+        (data.permissions.capabilities as string[]).includes('groups.manage')
+    );
 
     let search = $state('');
     let filterCategory = $state('all');
@@ -136,9 +142,14 @@
         deleting = true;
 
         try {
-            await fetch(`/api/groups/${deleteTarget.sAMAccountName}`, {
+            const res = await fetch(`/api/groups/${deleteTarget.sAMAccountName}`, {
                 method: 'DELETE'
             });
+
+            if (!res.ok) {
+                showNotice(await extractErrorMessage(res, 'Failed to delete group.'));
+                return;
+            }
 
             await invalidateAll();
         } finally {
@@ -177,10 +188,12 @@
             </p>
         </div>
 
-        <a href="/groups/create" class="btn btn-primary">
-            <Plus size={18} />
-            Create Group
-        </a>
+        {#if canManageGroups}
+            <a href="/groups/create" class="btn btn-primary">
+                <Plus size={18} />
+                Create Group
+            </a>
+        {/if}
 
     </div>
 
@@ -375,27 +388,29 @@
                                                         View Group
                                                     </a>
                                                 </li>
-                                                <li>
-                                                    <a href={`/groups/${group.sAMAccountName}/members`}>
-                                                        <UserCog size={16} />
-                                                        Manage Members
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a href={`/groups/${group.sAMAccountName}/edit`}>
-                                                        <Pencil size={16} />
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <button
-                                                        class="text-error"
-                                                        onclick={() => requestDelete(group)}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                        Delete
-                                                    </button>
-                                                </li>
+                                                {#if canManageGroups}
+                                                    <li>
+                                                        <a href={`/groups/${group.sAMAccountName}/edit`}>
+                                                            <UserCog size={16} />
+                                                            Manage Members
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a href={`/groups/${group.sAMAccountName}/members`}>
+                                                            <Pencil size={16} />
+                                                            Edit
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <button
+                                                            class="text-error"
+                                                            onclick={() => requestDelete(group)}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                            Delete
+                                                        </button>
+                                                    </li>
+                                                {/if}
                                             </ul>
                                         {/if}
 

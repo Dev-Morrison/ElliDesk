@@ -15,6 +15,7 @@
         ShieldCheck,
         FileClock,
         ScrollText,
+        Settings,
         AlertTriangle,
         ArrowRight
     } from 'lucide-svelte';
@@ -33,6 +34,7 @@
         icon: typeof UserPlus;
         accent: 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning';
         status: LinkStatus;
+        capability?: string | string[];
     }
 
     const QUICK_LINKS: QuickLink[] = [
@@ -42,7 +44,8 @@
             href: '/add-user',
             icon: UserPlus,
             accent: 'primary',
-            status: 'active'
+            status: 'active',
+            capability: 'users.manage'
         },
         {
             title: 'All Users',
@@ -50,7 +53,8 @@
             href: '/all-users',
             icon: Users,
             accent: 'info',
-            status: 'active'
+            status: 'active',
+            capability: 'users.view'
         },
         {
             title: 'Groups',
@@ -58,7 +62,8 @@
             href: '/groups',
             icon: Shield,
             accent: 'secondary',
-            status: 'active'
+            status: 'active',
+            capability: ['groups.view', 'groups.manage']
         },
         {
             title: 'Maintenance',
@@ -66,7 +71,8 @@
             href: '/maintenance',
             icon: Wrench,
             accent: 'accent',
-            status: 'active'
+            status: 'active',
+            capability: ['maintenance.offboard', 'maintenance.bulk-update', 'maintenance.reports']
         },
         {
             title: 'Computers',
@@ -74,7 +80,8 @@
             href: '/computers',
             icon: Monitor,
             accent: 'info',
-            status: 'active'
+            status: 'active',
+            capability: ['computers.view', 'computers.manage']
         },
         {
             title: 'Organizational Units',
@@ -82,7 +89,8 @@
             href: '/ous',
             icon: FolderKanban,
             accent: 'secondary',
-            status: 'active'
+            status: 'active',
+            capability: 'ous.view'
         },
         {
             title: 'Password Policy',
@@ -90,7 +98,8 @@
             href: '/policies/password',
             icon: ShieldCheck,
             accent: 'warning',
-            status: 'active'
+            status: 'active',
+            capability: 'password-policy.view'
         },
         {
             title: 'Event Logs',
@@ -98,7 +107,8 @@
             href: '/event-logs',
             icon: ScrollText,
             accent: 'secondary',
-            status: 'active'
+            status: 'active',
+            capability: 'event-logs.view'
         },
         {
             title: 'Audit Logs',
@@ -106,9 +116,28 @@
             href: '/audit-logs',
             icon: FileClock,
             accent: 'primary',
-            status: 'active'
+            status: 'active',
+            capability: 'audit-logs.view'
+        },
+        {
+            title: 'Administration',
+            description: 'Manage roles and permission assignments for this console.',
+            href: '/admin',
+            icon: Settings,
+            accent: 'primary',
+            status: 'active',
+            capability: 'admin.manage'
         }
     ];
+
+    function hasAny(required: QuickLink['capability']): boolean {
+        if (!required) return true;
+        const list = Array.isArray(required) ? required : [required];
+        const granted: string[] = data.permissions.capabilities;
+        return list.some((c) => granted.includes(c));
+    }
+
+    const visibleQuickLinks = $derived(QUICK_LINKS.filter((l) => hasAny(l.capability)));
 
     function accentClasses(accent: QuickLink['accent']) {
         return {
@@ -260,7 +289,7 @@
         <h2 class="text-lg font-semibold">Quick Actions</h2>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {#each QUICK_LINKS as link}
+            {#each visibleQuickLinks as link}
                 {#if link.status === 'active'}
                     <a
                         href={link.href}

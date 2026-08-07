@@ -1,8 +1,11 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { withLdapClient, searchDN, escapeLdapFilter, toSingle, ACCOUNTDISABLE } from '$lib/server/ldap';
+import { requireCapability, dnWithinScope } from '$lib/server/permissions';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+    requireCapability(locals, 'groups.manage');
+
     const sAMAccountName = params.group;
 
     try {
@@ -18,6 +21,8 @@ export const load: PageServerLoad = async ({ params }) => {
             const groupEntry = groupSearch.searchEntries[0];
             const groupDN =
                 toSingle(groupEntry.distinguishedName) ?? (groupEntry.dn as string);
+
+            if (!dnWithinScope(groupDN, locals.permissions.domainScope)) return null;
 
             const memberSearch = await client.search(searchDN(), {
                 scope: 'sub',

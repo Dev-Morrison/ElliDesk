@@ -1,10 +1,15 @@
 <script lang="ts">
     import type { ADComputer } from '$lib/types';
-    import { fileTimeToDate } from '$lib/index';
+    import { fileTimeToDate, extractErrorMessage } from '$lib/index';
     import { invalidateAll } from '$app/navigation';
     import { Monitor, MonitorCheck, MonitorX, MonitorOff, X } from 'lucide-svelte';
+    import { showNotice } from '$lib/stores/notice.svelte';
 
     let { data } = $props();
+
+    const canManageComputers = $derived(
+        (data.permissions.capabilities as string[]).includes('computers.manage')
+    );
 
     let search = $state('');
     let statusFilter = $state<'all' | 'enabled' | 'disabled'>('all');
@@ -112,8 +117,7 @@
             });
 
             if (!res.ok) {
-                const body = await res.json().catch(() => null);
-                alert(body?.error ?? 'Failed to update computer.');
+                showNotice(await extractErrorMessage(res, 'Failed to update computer.'));
                 return;
             }
 
@@ -306,20 +310,22 @@
                                 {/if}
                             </td>
                             <td onclick={(e) => e.stopPropagation()}>
-                                <button
-                                    type="button"
-                                    class="btn btn-xs {computer.enabled ? 'btn-outline btn-error' : 'btn-outline btn-success'}"
-                                    disabled={busyCn === computer.cn}
-                                    onclick={() => toggleEnabled(computer)}
-                                >
-                                    {#if busyCn === computer.cn}
-                                        <span class="loading loading-spinner loading-xs"></span>
-                                    {:else if computer.enabled}
-                                        Disable
-                                    {:else}
-                                        Enable
-                                    {/if}
-                                </button>
+                                {#if canManageComputers}
+                                    <button
+                                        type="button"
+                                        class="btn btn-xs {computer.enabled ? 'btn-outline btn-error' : 'btn-outline btn-success'}"
+                                        disabled={busyCn === computer.cn}
+                                        onclick={() => toggleEnabled(computer)}
+                                    >
+                                        {#if busyCn === computer.cn}
+                                            <span class="loading loading-spinner loading-xs"></span>
+                                        {:else if computer.enabled}
+                                            Disable
+                                        {:else}
+                                            Enable
+                                        {/if}
+                                    </button>
+                                {/if}
                             </td>
                         </tr>
                     {:else}
@@ -396,14 +402,16 @@
             </dl>
 
             <div class="modal-action">
-                <button
-                    type="button"
-                    class="btn {selectedComputer.enabled ? 'btn-error' : 'btn-success'}"
-                    disabled={busyCn === selectedComputer.cn}
-                    onclick={() => toggleEnabled(selectedComputer!)}
-                >
-                    {selectedComputer.enabled ? 'Disable' : 'Enable'}
-                </button>
+                {#if canManageComputers}
+                    <button
+                        type="button"
+                        class="btn {selectedComputer.enabled ? 'btn-error' : 'btn-success'}"
+                        disabled={busyCn === selectedComputer.cn}
+                        onclick={() => toggleEnabled(selectedComputer!)}
+                    >
+                        {selectedComputer.enabled ? 'Disable' : 'Enable'}
+                    </button>
+                {/if}
                 <button class="btn" type="button" onclick={() => (selectedComputer = null)}>Close</button>
             </div>
         </div>

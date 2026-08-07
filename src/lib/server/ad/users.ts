@@ -1,10 +1,12 @@
 import { Attribute, Change } from 'ldapts';
 import { env } from '$env/dynamic/private';
 import { escapeLdapFilter, getBoundClient, ACCOUNTDISABLE } from '$lib/server/ldap';
+import { dnWithinScope, type EffectivePermissions } from '$lib/server/permissions';
 
 export async function setUserEnabled(
     sAMAccountName: string,
-    enabled: boolean
+    enabled: boolean,
+    domainScope: EffectivePermissions['domainScope'] = 'all'
 ): Promise<{ dn: string }> {
     const client = await getBoundClient();
 
@@ -26,6 +28,12 @@ export async function setUserEnabled(
         const user = result.searchEntries[0];
 
         const dn = String(user.distinguishedName);
+
+        // Identical to "not found" for an out-of-scope target - a restricted
+        // admin shouldn't be able to confirm another domain's account exists.
+        if (!dnWithinScope(dn, domainScope)) {
+            throw new Error('User not found');
+        }
 
         let uac = Number(user.userAccountControl);
 
@@ -53,7 +61,10 @@ export async function setUserEnabled(
     }
 }
 
-export async function unlockUser(username: string): Promise<{ dn: string }> {
+export async function unlockUser(
+    username: string,
+    domainScope: EffectivePermissions['domainScope'] = 'all'
+): Promise<{ dn: string }> {
     const client = await getBoundClient();
 
     try {
@@ -68,6 +79,10 @@ export async function unlockUser(username: string): Promise<{ dn: string }> {
         }
 
         const dn = String(result.searchEntries[0].distinguishedName);
+
+        if (!dnWithinScope(dn, domainScope)) {
+            throw new Error('User not found');
+        }
 
         await client.modify(
             dn,

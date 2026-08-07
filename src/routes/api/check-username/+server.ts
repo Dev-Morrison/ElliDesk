@@ -1,30 +1,29 @@
 import type { RequestHandler } from './$types';
-import { Client } from 'ldapts';
-import { env } from '$env/dynamic/private';
-import { escapeLdapFilter } from '$lib/server/ldap';
+import { withLdapClient, searchDN, escapeLdapFilter } from '$lib/server/ldap';
+import { requireCapability } from '$lib/server/permissions';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+  requireCapability(locals, 'users.manage');
+
   const { username } = await request.json();
   if (!username) return new Response('Missing username', { status: 400 });
 
-  const client = new Client({
-    url: env.LDAP_URL,
-  });
-
   try {
-    await client.bind(env.LDAP_SERVICE_USER_DN, env.LDAP_SERVICE_PASSWORD);
+    // Deliberately unscoped by domain: usernames must be unique across the
+    // whole directory regardless of who's checking, so a restricted admin
+    // still needs to know if a name collides with another domain's account.
+    const available = await withLdapClient(async (client) => {
+      const result = await client.search(searchDN(), {
+        scope: 'sub',
+        filter: `(sAMAccountName=${escapeLdapFilter(username)})`
+      });
 
-    const result = await client.search(env.LDAP_SEARCH_DN, {
-      scope: 'sub',
-      filter: `(sAMAccountName=${escapeLdapFilter(username)})`
+      return result.searchEntries.length === 0;
     });
 
-    await client.unbind();
-
-    return new Response(
-      JSON.stringify({ available: result.searchEntries.length === 0 }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ available }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ available: false, error: 'LDAP error' }), {

@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { env } from '$env/dynamic/private';
 import type { SessionUser } from '$lib/types';
-import { isAuthorizedDn } from '$lib/server/ldap';
+import { resolvePermissions } from '$lib/server/permissions';
 
 function sign(data: string) {
     return createHmac('sha256', env.SESSION_SECRET)
@@ -36,11 +36,18 @@ function resolveSessionUser(cookie: string | undefined): SessionUser | null {
 export const handle: Handle = async ({ event, resolve }) => {
     event.locals.user = resolveSessionUser(event.cookies.get('session'));
 
+    // Resolved fresh every request (not cached in the cookie) so a role
+    // change or revocation via /admin takes effect within the session
+    // instead of waiting out the full 8-hour cookie expiry.
+    event.locals.permissions = await resolvePermissions(event.locals.user);
+
     // The (auth) layout only gates page navigation — /api/* routes live
     // outside that route group and perform the actual AD reads/writes, so
     // the authorization boundary has to be enforced here too, not just at
-    // the page level.
-    if (event.url.pathname.startsWith('/api/') && !isAuthorizedDn(event.locals.user?.dn)) {
+    // the page level. This only checks "authorized in *some* capacity" —
+    // individual endpoints enforce their own specific capability via
+    // requireCapability() from $lib/server/permissions.
+    if (event.url.pathname.startsWith('/api/') && event.locals.permissions.capabilities.size === 0) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401,
             headers: { 'Content-Type': 'application/json' }

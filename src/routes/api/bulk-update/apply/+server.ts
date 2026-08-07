@@ -10,6 +10,7 @@ import {
 } from '$lib/server/ad-utils';
 import { writeAuditLogs, type AuditEvent } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
 interface ApplyRequestBody {
     targets: string[];
@@ -26,6 +27,8 @@ interface ApplyResult {
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+    requireCapability(locals, 'maintenance.bulk-update');
+
     const { targets, attribute, value } = (await request.json()) as ApplyRequestBody;
 
     if (!isBulkEditableAttribute(attribute)) {

@@ -2,8 +2,11 @@ import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { withLdapClient, toSingle, ACCOUNTDISABLE } from '$lib/server/ldap';
 import type { ADUser } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+    requireCapability(locals, 'ous.view');
+
     const dn = url.searchParams.get('dn');
     const includeSubOUs = url.searchParams.get('includeSubOUs') === 'true';
 

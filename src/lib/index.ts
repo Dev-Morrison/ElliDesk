@@ -24,6 +24,34 @@ export async function copyToClipboard(text: string): Promise<void> {
     }
 }
 
+// Endpoints fail in a few different shapes (JSON `{message}` from SvelteKit's
+// error(), JSON `{error}` from hand-rolled handlers, or plain text) — this
+// normalizes all of them into one string for display, without assuming any
+// particular shape ahead of time.
+export async function extractErrorMessage(
+    res: Response,
+    fallback = 'Something went wrong.'
+): Promise<string> {
+    try {
+        const body = await res.clone().json();
+        if (body && typeof body === 'object') {
+            if (typeof body.message === 'string' && body.message) return body.message;
+            if (typeof body.error === 'string' && body.error) return body.error;
+        }
+    } catch {
+        // Not JSON — fall through to plain text.
+    }
+
+    try {
+        const text = await res.text();
+        if (text) return text;
+    } catch {
+        // ignore
+    }
+
+    return fallback;
+}
+
 export function fileTimeToDate(fileTime?: string | number) :Date | null {
     if (!fileTime) return null;
 

@@ -4,15 +4,19 @@ import type { RequestHandler } from './$types';
 import { setUserEnabled } from '$lib/server/ad/users';
 import { writeAuditLog } from '$lib/server/audit';
 import type { SessionUser } from '$lib/types';
+import { requireCapability } from '$lib/server/permissions';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
+    requireCapability(locals, 'users.manage');
+
     const actor = (locals as { user?: SessionUser })?.user?.username ?? 'unknown';
 
     try {
 
         const { dn } = await setUserEnabled(
             params.samAccountName,
-            false
+            false,
+            locals.permissions.domainScope
         );
 
         await writeAuditLog({

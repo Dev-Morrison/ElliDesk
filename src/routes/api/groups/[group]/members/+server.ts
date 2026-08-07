@@ -1,8 +1,11 @@
 import type { RequestHandler } from './$types';
 import { json, error } from '@sveltejs/kit';
 import { withLdapClient, searchDN, escapeLdapFilter, toSingle, ACCOUNTDISABLE } from '$lib/server/ldap';
+import { requireCapability, dnWithinScope } from '$lib/server/permissions';
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
+    requireCapability(locals, 'groups.manage');
+
     const sAMAccountName = params.group as string;
 
     try {
@@ -18,6 +21,8 @@ export const GET: RequestHandler = async ({ params }) => {
             const groupDN =
                 toSingle(groupSearch.searchEntries[0].distinguishedName) ??
                 (groupSearch.searchEntries[0].dn as string);
+
+            if (!dnWithinScope(groupDN, locals.permissions.domainScope)) return null;
 
             // Query users directly via memberOf rather than resolving each
             // `member` DN individually — one round trip instead of N.
