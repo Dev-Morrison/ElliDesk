@@ -118,14 +118,6 @@
                 <p class="text-sm text-slate-500 mt-1">Active Directory Console</p>
             </div>
 
-            <div class="flex w-full items-center justify-center mb-8">
-                <img
-                    src="src/lib/assets/favicon.svg"
-                    alt="Illustration of a person logging in to a computer"
-                    class="w-20 h-auto"
-                />
-            </div>
-
             <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
                 <h2 class="text-2xl font-bold text-slate-900 mb-1">Sign In</h2>
                 <p class="text-sm text-slate-500 mb-6">Enter your BOS domain credentials to continue.</p>
