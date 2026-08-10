@@ -13,8 +13,8 @@
         Wand2,
         FileBarChart,
         ShieldCheck,
+        ScrollText,
         FileClock,
-        AlertTriangle,
         Mail
     } from 'lucide-svelte';
 
@@ -31,8 +31,8 @@
         { id: 'bulk-update', label: 'Bulk Update', icon: Wand2, sub: true },
         { id: 'reports', label: 'Reports', icon: FileBarChart, sub: true },
         { id: 'password-policy', label: 'Password Policy', icon: ShieldCheck },
+        { id: 'event-logs', label: 'Event Logs', icon: ScrollText },
         { id: 'audit-logs', label: 'Audit Logs', icon: FileClock },
-        { id: 'known-issues', label: 'Known Issues', icon: AlertTriangle },
         { id: 'getting-help', label: 'Getting Help', icon: Mail }
     ];
 </script>
@@ -73,15 +73,6 @@
             </p>
         </header>
 
-        <div class="not-prose alert alert-warning mb-8">
-            <AlertTriangle size={20} />
-            <span>
-                <strong>Known issue:</strong> Password Reset currently fails with a connection error. This is
-                expected until the LDAPS certificate is finished — see <a href="#known-issues">Known Issues</a>
-                below. Everything else in the app is fully working.
-            </span>
-        </div>
-
         <!-- GETTING STARTED -->
         <section id="getting-started">
             <h2>Getting Started</h2>
@@ -97,9 +88,14 @@
                 create.
             </p>
             <p>
-                Access is currently limited to accounts under the ICT/MIS organizational unit. If you sign in
-                with correct credentials but see "not authorized," it means your account isn't in scope yet —
-                contact whoever administers ElliDesk to be added.
+                Access has to be granted by an administrator before your account can use ElliDesk. If you sign
+                in with correct credentials but see "not authorized," it means your account hasn't been granted
+                access yet — contact whoever administers ElliDesk to be added.
+            </p>
+            <p>
+                Some accounts are also limited to specific domains (for example, an NCRA administrator who can
+                only see NCRA's users and groups). If a page you expect to see is missing, or a list looks
+                smaller than you'd expect, that's usually why.
             </p>
             <p>
                 Sessions last <strong>8 hours</strong>, after which you'll need to sign in again.
@@ -120,7 +116,11 @@
             </ul>
             <p>
                 You can also navigate using the menu bar at the top of every page, which links directly to
-                Users, Groups, OUs, Computers, Maintenance, and Audit Logs.
+                Users, Groups, OUs, Computers, Maintenance, Event Logs, and Audit Logs.
+            </p>
+            <p>
+                If your account is limited to specific domains, these counts only cover those domains, not the
+                whole directory — a small badge near the top of the page shows which domain(s) you're scoped to.
             </p>
         </section>
 
@@ -142,6 +142,10 @@
                 <li><strong>Unlock</strong> — only shown when the account is currently locked out</li>
                 <li><strong>Reset Password</strong> — opens a dialog (see next section)</li>
             </ul>
+            <p class="text-sm text-base-content/60">
+                Enable/Disable, Unlock, and Reset Password only appear if your account has permission to manage
+                users — accounts with view-only access will just see View.
+            </p>
             <h3>Resetting a password</h3>
             <p>
                 The Reset Password dialog generates a strong random password for you automatically (with a
@@ -155,14 +159,6 @@
                 After a successful reset, the password is shown once with a copy button — AD doesn't let the
                 app retrieve it again after that, so copy it before closing the dialog.
             </p>
-            <div class="not-prose alert alert-warning">
-                <AlertTriangle size={18} />
-                <span>
-                    This action currently errors out — see <a href="#known-issues">Known Issues</a>. It will
-                    start working as soon as the LDAPS certificate is in place; nothing else needs to change on
-                    your end.
-                </span>
-            </div>
             <h3>User detail page</h3>
             <p>
                 Clicking a user's name (or "View") opens their full record: General, Account, Organization,
@@ -185,10 +181,13 @@
                 <span>
                     New accounts are created <strong>disabled and without a password</strong> on purpose. Use
                     Reset Password afterward to set an initial password — that's also what enables the account
-                    for use. Because Reset Password is temporarily unavailable (see
-                    <a href="#known-issues">Known Issues</a>), however new accounts can be enable and password set when setting up the account. This is a temporary workaround until the LDAPS certificate is installed.
+                    for use.
                 </span>
             </div>
+            <p>
+                If your account is limited to specific domains, the Domain dropdown here only offers the
+                domain(s) you're allowed to create users in.
+            </p>
         </section>
 
         <!-- GROUPS -->
@@ -196,12 +195,14 @@
             <h2>Groups</h2>
             <p>
                 <strong>Groups</strong> lists every security and distribution group, with search and filters
-                by type and OU. Click a group to see its members, or use the row menu to edit its description,
-                email, or manager, view members, or delete it entirely.
+                by type and OU. Click a group to see its details — category, scope, OU, manager, and member
+                count.
             </p>
             <p>
-                From a group's member list you can add or remove members directly — search for a user, add
-                them, or remove existing members with one click. Changes take effect immediately in AD.
+                If your account can manage groups, the row menu also offers <strong>Manage Members</strong>
+                (search for a user, add them, or remove existing members — changes take effect immediately in
+                AD), <strong>Edit</strong> (description, email, and manager), and <strong>Delete</strong>.
+                View-only accounts only see View Group.
             </p>
         </section>
 
@@ -308,6 +309,35 @@
             </p>
         </section>
 
+        <!-- EVENT LOGS -->
+        <section id="event-logs">
+            <h2>Event Logs</h2>
+            <p>
+                <strong>Event Logs</strong> browses Windows Event Log entries (Application, Security, Setup,
+                and System) imported from the domain controller. Filter by log type, level, machine, event ID,
+                a date range, or a message search, then click any row for full detail — including the user
+                SID, record ID, and source file it came from.
+            </p>
+            <h3>Importing logs</h3>
+            <p>
+                Event logs don't appear automatically — they have to be exported from the DC and imported here.
+                Click <strong>Import</strong> to get to the import page:
+            </p>
+            <ol>
+                <li>
+                    On the domain controller, export the log(s) to CSV using
+                    <code>Export-EventLogsToCsv.ps1</code>
+                </li>
+                <li>Pick the matching log type here (Application, Security, Setup, or System)</li>
+                <li>Upload the resulting CSV file(s) — multiple files of the same log type can be uploaded together</li>
+            </ol>
+            <p>
+                Each file shows its own progress with an inserted/skipped count. Re-uploading a file you've
+                already imported is safe — matching events are updated in place, not duplicated, so it's fine
+                to re-run an import if you're not sure whether a file was already loaded.
+            </p>
+        </section>
+
         <!-- AUDIT LOGS -->
         <section id="audit-logs">
             <h2>Audit Logs</h2>
@@ -321,31 +351,6 @@
                 This is the first place to check if you need to know who did what, or when — for example,
                 confirming when an account was disabled and by whom.
             </p>
-        </section>
-
-        <!-- KNOWN ISSUES -->
-        <section id="known-issues">
-            <h2>Known Issues</h2>
-            <div class="not-prose alert alert-warning">
-                <AlertTriangle size={20} />
-                <div>
-                    <p class="font-semibold mb-1">Password Reset is temporarily unavailable</p>
-                    <p class="text-sm">
-                        Active Directory refuses to accept a new password over a connection that isn't
-                        encrypted, so ElliDesk connects using StartTLS specifically for that one action. Our
-                        domain controller doesn't yet have the self-signed certificate installed for LDAPS/StartTLS,
-                        so right now Reset Password will fail with a connection error every time it's used —
-                        this includes activating brand-new accounts created via Add New User, since activation
-                        is done through the same Reset Password flow.
-                    </p>
-                    <p class="text-sm mt-2">
-                        This is being worked on and doesn't affect anything else in the app — search, viewing,
-                        enable/disable, unlock, groups, OUs, computers, offboarding, bulk update, reports, and
-                        audit logs are all fully working today. Once the certificate is installed, password
-                        resets will start working immediately with no changes needed on your end.
-                    </p>
-                </div>
-            </div>
         </section>
 
         <!-- GETTING HELP -->
