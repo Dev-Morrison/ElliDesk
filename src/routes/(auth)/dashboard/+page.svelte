@@ -156,6 +156,10 @@
         month: 'long',
         day: 'numeric'
     });
+
+    const scopedDomains = $derived(
+        data.permissions.domainScope === 'all' ? null : data.permissions.domainScope
+    );
 </script>
 
 
@@ -167,9 +171,21 @@
             <p class="text-sm text-base-content/60">{today}</p>
             <h1 class="text-3xl font-bold">Welcome back, {data.user.name}</h1>
             <p class="text-base-content/70 mt-1">
-                Here's what's happening across the directory today.
+                {#if scopedDomains}
+                    Here's what's happening in your domain{scopedDomains.length === 1 ? '' : 's'} today.
+                {:else}
+                    Here's what's happening across the directory today.
+                {/if}
             </p>
         </div>
+
+        {#if scopedDomains}
+            <div class="flex flex-wrap gap-1.5 sm:justify-end">
+                {#each scopedDomains as domain}
+                    <span class="badge badge-outline">{domain}</span>
+                {/each}
+            </div>
+        {/if}
     </section>
 
     <!-- ATTENTION BANNER -->
