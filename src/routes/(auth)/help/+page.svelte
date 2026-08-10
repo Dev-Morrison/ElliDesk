@@ -179,9 +179,11 @@
             </p>
             <div class="not-prose alert alert-info">
                 <span>
-                    New accounts are created <strong>disabled and without a password</strong> on purpose. Use
-                    Reset Password afterward to set an initial password — that's also what enables the account
-                    for use.
+                    New accounts are created <strong>disabled and without a password</strong> on purpose. When 
+                    you create a new user, you'll need to enable the account before they can log in. You can also reset their password at the same time, 
+                    which generates a strong random password for you to give them or set a temporary one of your own choosing. 
+                    <br> <strong>Important:</strong> This application does not manage cloud accounts (Microsoft 365, SharePoint, etc.) — only on-premises 
+                    Active Directory accounts. If you need to assign a cloud Microsoft 365 license, please use the appropriate admin console or reach out to your IT administrator for assistance.
                 </span>
             </div>
             <p>
