@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [tailwindcss(), sveltekit()], 
     server: {
         port: 80,
-        allowedHosts: ['heron','heronpublic'],
+        allowedHosts: ['heron','heronpublic','heron.bos.local','heronpublic.bos.local'],
         watch: {
             ignored: ['**/logs/**', '**/logs/audit-log.jsonl']
         }
