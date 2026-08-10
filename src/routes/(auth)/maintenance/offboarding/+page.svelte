@@ -204,6 +204,10 @@
     const failureCount = $derived(applyResults?.filter((r) => !r.success).length ?? 0);
 </script>
 
+<svelte:head>
+    <title>Offboarding — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 flex flex-col justify-center m-auto max-w-5xl">
 
     <div>

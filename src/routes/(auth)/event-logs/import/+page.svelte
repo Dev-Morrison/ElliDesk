@@ -100,6 +100,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Import Event Logs — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-3xl mx-auto">
 
     <div>

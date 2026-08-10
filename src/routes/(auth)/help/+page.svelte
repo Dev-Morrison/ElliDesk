@@ -38,7 +38,7 @@
 </script>
 
 <svelte:head>
-    <title>ElliDesk — User Guide</title>
+    <title>User Guide — ElliDesk</title>
 </svelte:head>
 
 <div class="max-w-7xl mx-auto grid lg:grid-cols-[240px_1fr] gap-8 pb-24">

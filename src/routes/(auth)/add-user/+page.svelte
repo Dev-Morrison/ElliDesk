@@ -157,7 +157,7 @@
 </script>
 
 <svelte:head>
-    <title>Add User</title>
+    <title>Add User — ElliDesk</title>
 </svelte:head>
 
 <div class="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">

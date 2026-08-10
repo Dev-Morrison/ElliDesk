@@ -45,6 +45,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Maintenance — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-6xl mx-auto">
 
     <div>

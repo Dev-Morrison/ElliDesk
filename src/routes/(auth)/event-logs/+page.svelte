@@ -80,6 +80,10 @@
     let selectedRow = $state<(typeof data.rows)[number] | null>(null);
 </script>
 
+<svelte:head>
+    <title>Event Logs — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-7xl mx-auto pb-10">
 
     <section class="flex items-center justify-between flex-wrap gap-3">

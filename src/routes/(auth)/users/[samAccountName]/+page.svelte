@@ -8,6 +8,8 @@
 
   let user = data.selectedUser;
 
+  const pageTitle = `${user.displayName} — ElliDesk`;
+
   const canManageUsers = $derived(
     (data.permissions.capabilities as string[]).includes("users.manage")
   );
@@ -114,6 +116,10 @@
     if (resetDone) location.reload();
   }
 </script>
+
+<svelte:head>
+  <title>{pageTitle}</title>
+</svelte:head>
 
 <div class="space-y-5">
   <a href="/all-users" class="btn btn-ghost btn-sm gap-1 -ml-3">

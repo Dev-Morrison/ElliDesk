@@ -9,6 +9,8 @@
     // }
     let { data } = $props();
 
+    const pageTitle = $derived(`Manage Members: ${data.group.cn} — ElliDesk`);
+
     interface UserSummary {
         dn: string;
         displayName: string;
@@ -148,6 +150,10 @@
         }
     }
 </script>
+
+<svelte:head>
+    <title>{pageTitle}</title>
+</svelte:head>
 
 <div class="space-y-6">
 

@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>Login</title>
+	<title>Login — ElliDesk</title>
 </svelte:head>
 <section
 	class="bg-base-100 h-fit min-h-screen flex items-center justify-center w-full"

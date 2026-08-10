@@ -2,6 +2,10 @@
     import { ShieldCheck, Users, KeyRound, ArrowRight } from 'lucide-svelte';
 </script>
 
+<svelte:head>
+    <title>Administration — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-4xl mx-auto">
 
     <div>

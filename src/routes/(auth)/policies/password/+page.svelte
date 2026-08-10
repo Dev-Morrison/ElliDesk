@@ -20,6 +20,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Password Policy — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-5xl mx-auto">
 
     <div>

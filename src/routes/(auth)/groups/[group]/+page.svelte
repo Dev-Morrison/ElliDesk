@@ -24,6 +24,8 @@
     let deleting = $state(false);
     let showDeleteConfirm = $state(false);
 
+    const pageTitle = $derived(`${data.group.cn} — ElliDesk`);
+
     function categoryBadgeClass(category: string) {
         return category === 'Security' ? 'badge-success' : 'badge-warning';
     }
@@ -67,6 +69,10 @@
         }
     }
 </script>
+
+<svelte:head>
+    <title>{pageTitle}</title>
+</svelte:head>
 
 <div class="space-y-6">
 

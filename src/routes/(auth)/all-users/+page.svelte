@@ -205,6 +205,10 @@
         }).length;
     });
 </script>
+
+<svelte:head>
+    <title>All Users — ElliDesk</title>
+</svelte:head>
 <div class="flex justify-between items-center pb-10 w-full">
     <span>
         <h1 class="text-4xl font-bold">All Users</h1>

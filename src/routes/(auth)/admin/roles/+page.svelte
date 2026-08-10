@@ -128,6 +128,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Roles — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-5xl mx-auto">
 
     <div class="flex items-center justify-between flex-wrap gap-3">

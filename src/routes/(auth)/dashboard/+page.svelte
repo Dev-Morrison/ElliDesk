@@ -162,6 +162,10 @@
     );
 </script>
 
+<svelte:head>
+    <title>Dashboard — ElliDesk</title>
+</svelte:head>
+
 
 <div class="space-y-8 max-w-6xl mx-auto p-6 lg:p-10">
 

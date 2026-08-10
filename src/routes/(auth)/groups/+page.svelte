@@ -174,6 +174,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Groups — ElliDesk</title>
+</svelte:head>
+
 <svelte:window onclick={closeMenu} />
 
 <div class="space-y-6 p-10">

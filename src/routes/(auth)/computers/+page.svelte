@@ -142,6 +142,10 @@
     let selectedComputer = $state<ADComputer | null>(null);
 </script>
 
+<svelte:head>
+    <title>Computers — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 max-w-7xl mx-auto p-6 lg:p-10">
 
     <section class="flex items-center justify-between flex-wrap gap-3">

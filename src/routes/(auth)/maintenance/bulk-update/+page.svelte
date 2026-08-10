@@ -305,6 +305,10 @@
     );
 </script>
 
+<svelte:head>
+    <title>Bulk Update — ElliDesk</title>
+</svelte:head>
+
 <div class="space-y-6 flex flex-col justify-center m-auto max-w-5xl">
 
     <div>
