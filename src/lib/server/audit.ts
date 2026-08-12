@@ -1,14 +1,23 @@
 import type { RowDataPacket } from 'mysql2/promise';
-import { getPool } from '$lib/server/db';
+import { getPool, QUERY_TIMEOUT_MS } from '$lib/server/db';
 
 // Audit trail backed by a real table (see ensureAuditTable below) instead
 // of the local JSONL file this used to write — durable across deploys and
 // queryable from the /audit-logs page.
 
+// Sessions are stateless signed cookies with no server-side store (see
+// hooks.server.ts/resolveSessionUser) — there's no session table to query
+// for "who's logged in." This is the single source of truth for how long a
+// session is considered valid; the login action (src/routes/(public)/login)
+// imports it when setting the cookie's own expiry, and listActiveSessions()
+// below uses it to decide whether a past login is still active.
+export const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 hours
+
 export type AuditAction =
     | 'login'
     | 'login-failed'
     | 'login-denied'
+    | 'logout'
     | 'user-created'
     | 'user-updated'
     | 'user-enabled'
@@ -23,6 +32,7 @@ export type AuditAction =
     | 'group-deleted'
     | 'user-offboarded'
     | 'event-log-imported'
+    | 'event-log-cleanup'
     | 'role-created'
     | 'role-updated'
     | 'role-deleted'
@@ -77,8 +87,9 @@ let tableReady: Promise<void> | null = null;
 function ensureAuditTable(): Promise<void> {
     if (!tableReady) {
         tableReady = getPool()
-            .query(
-                `CREATE TABLE IF NOT EXISTS audit_logs (
+            .query({
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `CREATE TABLE IF NOT EXISTS audit_logs (
                     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                     occurred_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
                     actor VARCHAR(128) NOT NULL,
@@ -98,7 +109,7 @@ function ensureAuditTable(): Promise<void> {
                     KEY idx_action (action),
                     KEY idx_target_sam (target_sam)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
-            )
+            })
             .then(() => undefined)
             .catch((err) => {
                 // Let the next call retry rather than permanently wedging
@@ -141,9 +152,12 @@ export async function writeAuditLogs(events: AuditEvent[]): Promise<void> {
         ]);
 
         await getPool().query(
-            `INSERT INTO audit_logs
+            {
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `INSERT INTO audit_logs
                 (actor, action, target_dn, target_sam, target_display_name, attribute_name, old_value, new_value, success, error_message, details)
-             VALUES ?`,
+             VALUES ?`
+            },
             [values]
         );
     } catch (err) {
@@ -266,4 +280,66 @@ export async function listAuditActions(): Promise<string[]> {
     );
 
     return rows.map((r) => r.action as string);
+}
+
+export interface ActiveSession {
+    actor: string;
+    targetDn: string | null;
+    authSource: 'ldap' | 'local' | null;
+    loginAt: string;
+    expiresAt: string;
+}
+
+interface ActiveSessionRowPacket extends RowDataPacket {
+    actor: string;
+    target_dn: string | null;
+    occurred_at: Date;
+    details: Record<string, unknown> | null;
+}
+
+/**
+ * Approximates "who's currently logged in" from the audit trail rather than
+ * a real session store (there isn't one - see SESSION_DURATION_MS above):
+ * for each account, its most recent successful login counts as an active
+ * session unless a logout has been recorded since, or the session's
+ * SESSION_DURATION_MS has already elapsed. Best-effort by nature - a
+ * browser closed without hitting Logout looks "active" until it expires,
+ * the same way the cookie itself behaves.
+ */
+export async function listActiveSessions(): Promise<ActiveSession[]> {
+    await ensureAuditTable();
+
+    const [rows] = await getPool().query<ActiveSessionRowPacket[]>(
+        {
+            timeout: QUERY_TIMEOUT_MS,
+            sql: `SELECT a.actor, a.target_dn, a.occurred_at, a.details
+             FROM audit_logs a
+             INNER JOIN (
+                 SELECT actor, MAX(occurred_at) AS max_login
+                 FROM audit_logs
+                 WHERE action = 'login' AND success = 1
+                 GROUP BY actor
+             ) latest ON latest.actor = a.actor AND latest.max_login = a.occurred_at
+             WHERE a.action = 'login' AND a.success = 1
+               AND a.occurred_at > (NOW() - INTERVAL ? SECOND)
+               AND NOT EXISTS (
+                   SELECT 1 FROM audit_logs lo
+                   WHERE lo.actor = a.actor AND lo.action = 'logout' AND lo.occurred_at > a.occurred_at
+               )
+             ORDER BY a.occurred_at DESC`
+        },
+        [SESSION_DURATION_MS / 1000]
+    );
+
+    return rows.map((r) => {
+        const authSource = r.details?.authSource;
+
+        return {
+            actor: r.actor,
+            targetDn: r.target_dn,
+            authSource: authSource === 'ldap' || authSource === 'local' ? authSource : null,
+            loginAt: r.occurred_at.toISOString(),
+            expiresAt: new Date(r.occurred_at.getTime() + SESSION_DURATION_MS).toISOString()
+        };
+    });
 }

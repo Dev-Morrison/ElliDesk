@@ -1,6 +1,6 @@
 import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { error } from '@sveltejs/kit';
-import { getPool } from '$lib/server/db';
+import { getPool, QUERY_TIMEOUT_MS } from '$lib/server/db';
 import { searchDN } from '$lib/server/ldap';
 import { AD_CONFIG } from '$lib/config/adconfig';
 import type { SessionUser } from '$lib/types';
@@ -160,7 +160,9 @@ export function ensurePermissionTables(): Promise<void> {
         tableReady = (async () => {
             const pool = getPool();
 
-            await pool.query(`
+            await pool.query({
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `
                 CREATE TABLE IF NOT EXISTS roles (
                     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     name VARCHAR(64) NOT NULL,
@@ -170,9 +172,12 @@ export function ensurePermissionTables(): Promise<void> {
                     PRIMARY KEY (id),
                     UNIQUE KEY uniq_role_name (name)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            `);
+            `
+            });
 
-            await pool.query(`
+            await pool.query({
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `
                 CREATE TABLE IF NOT EXISTS role_capabilities (
                     role_id INT UNSIGNED NOT NULL,
                     capability VARCHAR(64) NOT NULL,
@@ -180,9 +185,12 @@ export function ensurePermissionTables(): Promise<void> {
                     CONSTRAINT fk_role_capabilities_role
                         FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            `);
+            `
+            });
 
-            await pool.query(`
+            await pool.query({
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `
                 CREATE TABLE IF NOT EXISTS role_assignments (
                     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
                     principal_dn VARCHAR(512) NOT NULL,
@@ -197,9 +205,12 @@ export function ensurePermissionTables(): Promise<void> {
                     CONSTRAINT fk_role_assignments_role
                         FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            `);
+            `
+            });
 
-            await pool.query(`
+            await pool.query({
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `
                 CREATE TABLE IF NOT EXISTS role_assignment_domains (
                     assignment_id INT UNSIGNED NOT NULL,
                     domain_key VARCHAR(64) NOT NULL,
@@ -207,7 +218,8 @@ export function ensurePermissionTables(): Promise<void> {
                     CONSTRAINT fk_role_assignment_domains_assignment
                         FOREIGN KEY (assignment_id) REFERENCES role_assignments(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-            `);
+            `
+            });
         })().catch((err) => {
             tableReady = null;
             throw err;
@@ -251,11 +263,14 @@ export async function resolvePermissions(user: SessionUser | null): Promise<Effe
 
         const placeholders = principalDns.map(() => '?').join(',');
         const [rows] = await getPool().query<PermissionRow[]>(
-            `SELECT ra.scope_all_domains, rc.capability, rad.domain_key
+            {
+                timeout: QUERY_TIMEOUT_MS,
+                sql: `SELECT ra.scope_all_domains, rc.capability, rad.domain_key
              FROM role_assignments ra
              JOIN role_capabilities rc ON rc.role_id = ra.role_id
              LEFT JOIN role_assignment_domains rad ON rad.assignment_id = ra.id
-             WHERE LOWER(ra.principal_dn) IN (${placeholders})`,
+             WHERE LOWER(ra.principal_dn) IN (${placeholders})`
+            },
             principalDns
         );
 

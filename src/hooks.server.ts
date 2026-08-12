@@ -54,5 +54,16 @@ export const handle: Handle = async ({ event, resolve }) => {
         });
     }
 
-    return resolve(event);
+    const response = await resolve(event);
+
+    // Never cache API responses - they carry per-session directory/DB data
+    // that shouldn't be served stale (or to a different session) from the
+    // browser's HTTP cache. Page responses are covered separately by
+    // (auth)/+layout.server.ts, which also has to run before this can throw
+    // a redirect, so it can't be handled here.
+    if (event.url.pathname.startsWith('/api/')) {
+        response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    }
+
+    return response;
 };

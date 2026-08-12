@@ -4,7 +4,13 @@ import { hasCapability, requiredCapabilitiesForPath, serializePermissions } from
 
 export const ssr = true;
 
-export const load: LayoutServerLoad = async ({ locals, cookies, url }) => {
+export const load: LayoutServerLoad = async ({ locals, cookies, url, setHeaders }) => {
+
+    // Every page behind login is per-session content — without this, a
+    // browser (or its back/forward cache) can serve a previously-fetched
+    // authenticated page after logout without re-checking the server at all,
+    // making it look like the session was never destroyed even though it was.
+    setHeaders({ 'Cache-Control': 'no-store, must-revalidate' });
 
     if (!locals.user) {
         throw redirect(302, '/login');

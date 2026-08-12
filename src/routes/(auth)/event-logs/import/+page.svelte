@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { Upload, ScrollText, CheckCircle2, XCircle, AlertTriangle } from 'lucide-svelte';
+    import { Upload, ScrollText, CheckCircle2, XCircle, AlertTriangle, Trash2, Search } from 'lucide-svelte';
+    import { extractErrorMessage } from '$lib/index';
+    import { showNotice } from '$lib/stores/notice.svelte';
 
     const LOG_TYPES = ['Application', 'Security', 'Setup', 'System'] as const;
 
@@ -98,6 +100,124 @@
         files = null;
         fileProgress = [];
     }
+
+    // --- Cleanup ------------------------------------------------------------
+    let cleanupLogName = $state<'' | (typeof LOG_TYPES)[number]>('');
+    let cleanupDays = $state(180);
+
+    interface CleanupPreview {
+        matching: number;
+        oldestMatch: string | null;
+        newestMatch: string | null;
+    }
+
+    let previewing = $state(false);
+    let previewResult = $state<CleanupPreview | null>(null);
+    let previewParamsKey = $state('');
+
+    let showDeleteConfirm = $state(false);
+    let deleting = $state(false);
+    let deletedCount = $state(0);
+    let deleteDone = $state(false);
+    let deleteError = $state('');
+
+    function currentCleanupParamsKey() {
+        return `${cleanupLogName}|${cleanupDays}`;
+    }
+
+    // A preview only reflects the filters it was run with — if either
+    // changes afterward, the count on screen no longer matches what Delete
+    // would actually remove, so re-previewing is required before it unlocks.
+    const previewStale = $derived(
+        previewResult !== null && previewParamsKey !== currentCleanupParamsKey()
+    );
+
+    async function runPreview() {
+        previewing = true;
+
+        try {
+            const res = await fetch('/api/event-logs/cleanup/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    olderThanDays: cleanupDays,
+                    logName: cleanupLogName || undefined
+                })
+            });
+
+            if (!res.ok) {
+                throw new Error(await extractErrorMessage(res, 'Failed to preview cleanup.'));
+            }
+
+            previewResult = await res.json();
+            previewParamsKey = currentCleanupParamsKey();
+            deleteDone = false;
+            deleteError = '';
+        } catch (err) {
+            showNotice(err instanceof Error ? err.message : 'Failed to preview cleanup.');
+        } finally {
+            previewing = false;
+        }
+    }
+
+    async function confirmCleanup() {
+        showDeleteConfirm = false;
+        deleting = true;
+        deletedCount = 0;
+        deleteDone = false;
+        deleteError = '';
+
+        try {
+            const res = await fetch('/api/event-logs/cleanup/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    olderThanDays: cleanupDays,
+                    logName: cleanupLogName || undefined
+                })
+            });
+
+            if (!res.ok || !res.body) {
+                throw new Error(await extractErrorMessage(res, `Cleanup failed (${res.status})`));
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() ?? '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    const event = JSON.parse(line);
+
+                    if (event.type === 'progress' || event.type === 'done') {
+                        deletedCount = event.deleted;
+                    } else if (event.type === 'error') {
+                        deleteError = event.message;
+                    }
+                }
+            }
+
+            deleteDone = true;
+            previewResult = null;
+        } catch (err) {
+            deleteError = err instanceof Error ? err.message : 'Something went wrong.';
+        } finally {
+            deleting = false;
+        }
+    }
+
+    function formatCleanupDate(iso: string | null) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+    }
 </script>
 
 <svelte:head>
@@ -173,6 +293,134 @@
         </div>
     </div>
 
+    <!-- CLEANUP -->
+    <div class="divider">Cleanup</div>
+
+    <div class="card bg-base-100 shadow">
+        <div class="card-body gap-4">
+
+            <div>
+                <h2 class="font-semibold flex items-center gap-2">
+                    <Trash2 size={18} />
+                    Cleanup Old Entries
+                </h2>
+                <p class="text-sm text-base-content/60 mt-1">
+                    Permanently delete imported entries older than a chosen number of days. Preview first —
+                    deleting cannot be undone.
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <label class="form-control w-full sm:w-48">
+                    <div class="label"><span class="label-text">Log type</span></div>
+                    <select
+                        bind:value={cleanupLogName}
+                        class="select select-bordered"
+                        disabled={deleting}
+                    >
+                        <option value="">All Log Types</option>
+                        {#each LOG_TYPES as type}
+                            <option value={type}>{type}</option>
+                        {/each}
+                    </select>
+                </label>
+
+                <label class="form-control w-full sm:w-40">
+                    <div class="label"><span class="label-text">Older than (days)</span></div>
+                    <input
+                        type="number"
+                        min="1"
+                        bind:value={cleanupDays}
+                        class="input input-bordered"
+                        disabled={deleting}
+                    />
+                </label>
+
+                <div class="form-control flex-1 sm:items-end">
+                    <div class="label sm:hidden"><span class="label-text">&nbsp;</span></div>
+                    <button
+                        type="button"
+                        class="btn btn-outline w-full sm:w-auto"
+                        onclick={runPreview}
+                        disabled={previewing || deleting || cleanupDays < 1}
+                    >
+                        {#if previewing}
+                            <span class="loading loading-spinner loading-sm"></span>
+                        {:else}
+                            <Search size={16} />
+                        {/if}
+                        Preview
+                    </button>
+                </div>
+            </div>
+
+            {#if previewResult}
+                {#if previewResult.matching === 0}
+                    <div class="alert text-sm">
+                        <span>No entries match these filters — nothing to delete.</span>
+                    </div>
+                {:else}
+                    <div class="alert alert-warning text-sm">
+                        <AlertTriangle size={18} />
+                        <span>
+                            <strong>{previewResult.matching.toLocaleString()}</strong>
+                            {previewResult.matching === 1 ? 'entry matches' : 'entries match'}, from
+                            {formatCleanupDate(previewResult.oldestMatch)} to
+                            {formatCleanupDate(previewResult.newestMatch)}. This cannot be undone.
+                        </span>
+                    </div>
+                {/if}
+
+                {#if previewStale}
+                    <p class="text-xs text-warning">Filters changed — preview again before deleting.</p>
+                {/if}
+
+                <div class="card-actions justify-end">
+                    <button
+                        type="button"
+                        class="btn btn-error"
+                        disabled={deleting || previewStale || previewResult.matching === 0}
+                        onclick={() => (showDeleteConfirm = true)}
+                    >
+                        {#if deleting}
+                            <span class="loading loading-spinner loading-sm"></span>
+                            Deleting...
+                        {:else}
+                            <Trash2 size={16} />
+                            Delete {previewResult.matching.toLocaleString()} Entries
+                        {/if}
+                    </button>
+                </div>
+            {/if}
+
+            {#if deleting || deleteDone}
+                <div class="p-3 border border-base-200 rounded-lg text-sm flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        {#if deleting}
+                            <span class="loading loading-spinner loading-xs"></span>
+                            Deleting...
+                        {:else if deleteError}
+                            <XCircle size={16} class="text-error" />
+                            Cleanup failed
+                        {:else}
+                            <CheckCircle2 size={16} class="text-success" />
+                            Cleanup complete
+                        {/if}
+                    </span>
+                    <span class="text-base-content/60">{deletedCount.toLocaleString()} deleted</span>
+                </div>
+            {/if}
+
+            {#if deleteError}
+                <div class="alert alert-error text-sm">
+                    <AlertTriangle size={16} />
+                    <span>{deleteError}</span>
+                </div>
+            {/if}
+
+        </div>
+    </div>
+
     {#if fileProgress.length > 0}
         <div class="card bg-base-100 shadow">
             <div class="card-body gap-3">
@@ -238,3 +486,27 @@
     {/if}
 
 </div>
+
+<!-- DELETE CONFIRM MODAL -->
+{#if showDeleteConfirm && previewResult}
+    <div class="modal modal-open">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Delete Event Log Entries</h3>
+            <p class="py-4">
+                Permanently delete <span class="font-semibold">{previewResult.matching.toLocaleString()}</span>
+                {cleanupLogName ? cleanupLogName : ''} entries older than {cleanupDays} days
+                (before {formatCleanupDate(previewResult.oldestMatch)} through
+                {formatCleanupDate(previewResult.newestMatch)})? This cannot be undone.
+            </p>
+            <div class="modal-action">
+                <button class="btn" onclick={() => (showDeleteConfirm = false)}>Cancel</button>
+                <button class="btn btn-error" onclick={confirmCleanup}>
+                    <Trash2 size={16} />
+                    Delete
+                </button>
+            </div>
+        </div>
+
+        <div class="modal-backdrop" onclick={() => (showDeleteConfirm = false)}></div>
+    </div>
+{/if}

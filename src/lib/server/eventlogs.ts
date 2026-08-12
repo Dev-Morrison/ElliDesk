@@ -1,4 +1,4 @@
-import type { RowDataPacket } from 'mysql2/promise';
+import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { getPool } from '$lib/server/db';
 
 // Windows Event Log entries (Application/Security/Setup/System), exported
@@ -274,6 +274,92 @@ export async function queryEventLogs(
             sourceFile: r.source_file
         }))
     };
+}
+
+// Cleanup deletes in bounded batches rather than one giant DELETE — a
+// multi-million-row single statement holds a long transaction (growing the
+// undo log significantly) and can itself add to disk pressure on a DB
+// that's already tight on space, which is exactly the scenario this exists
+// to clean up after. Each batch gets its own generous-but-bounded timeout so
+// a stuck batch fails loudly instead of hanging (see QUERY_TIMEOUT_MS in
+// db.ts for why that matters) - this is a maintenance action, not on the
+// login-critical path, so it can afford to wait longer per query than that.
+const CLEANUP_BATCH_SIZE = 5000;
+const CLEANUP_BATCH_TIMEOUT_MS = 30000;
+
+export interface EventLogCleanupPreview {
+    matching: number;
+    oldestMatch: string | null;
+    newestMatch: string | null;
+}
+
+function cleanupWhere(beforeDate: Date, logName?: EventLogName): { sql: string; params: unknown[] } {
+    const clauses = ['time_created < ?'];
+    const params: unknown[] = [beforeDate];
+
+    if (logName) {
+        clauses.push('log_name = ?');
+        params.push(logName);
+    }
+
+    return { sql: clauses.join(' AND '), params };
+}
+
+export async function previewEventLogCleanup(
+    beforeDate: Date,
+    logName?: EventLogName
+): Promise<EventLogCleanupPreview> {
+    await ensureEventLogsTable();
+
+    const { sql: whereSql, params } = cleanupWhere(beforeDate, logName);
+
+    const [rows] = await getPool().query<RowDataPacket[]>(
+        `SELECT COUNT(*) AS total, MIN(time_created) AS oldest, MAX(time_created) AS newest
+         FROM event_logs WHERE ${whereSql}`,
+        params
+    );
+
+    const row = rows[0];
+
+    return {
+        matching: Number(row?.total ?? 0),
+        oldestMatch: row?.oldest ? new Date(row.oldest).toISOString() : null,
+        newestMatch: row?.newest ? new Date(row.newest).toISOString() : null
+    };
+}
+
+/**
+ * Deletes matching rows in batches of CLEANUP_BATCH_SIZE, reporting running
+ * progress via `onProgress`. Returns the total number of rows deleted.
+ */
+export async function cleanupEventLogs(
+    beforeDate: Date,
+    logName: EventLogName | undefined,
+    onProgress?: (deletedSoFar: number) => void
+): Promise<number> {
+    await ensureEventLogsTable();
+
+    const pool = getPool();
+    const { sql: whereSql, params } = cleanupWhere(beforeDate, logName);
+
+    let totalDeleted = 0;
+
+    for (;;) {
+        const [result] = await pool.query<ResultSetHeader>(
+            {
+                timeout: CLEANUP_BATCH_TIMEOUT_MS,
+                sql: `DELETE FROM event_logs WHERE ${whereSql} LIMIT ?`
+            },
+            [...params, CLEANUP_BATCH_SIZE]
+        );
+
+        totalDeleted += result.affectedRows;
+        onProgress?.(totalDeleted);
+
+        if (result.affectedRows < CLEANUP_BATCH_SIZE) break;
+    }
+
+    return totalDeleted;
 }
 
 export async function listEventLogFacets(): Promise<{ machines: string[]; levels: string[] }> {

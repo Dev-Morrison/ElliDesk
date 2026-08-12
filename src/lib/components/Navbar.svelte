@@ -83,7 +83,7 @@
         <details>
           <summary class="font-bold">BOS\{username}</summary>
           <ul class="bg-base-300 rounded-t-none p-2 w-full">
-            <li><a href="/logout">Logout</a></li>
+            <li><a href="/logout" data-sveltekit-reload>Logout</a></li>
           </ul>
         </details>
       </li>

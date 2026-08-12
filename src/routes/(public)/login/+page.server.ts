@@ -4,7 +4,7 @@ import { createHmac } from 'crypto';
 import { fail, redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { ldapAuthenticate } from '$lib/ldap';
-import { writeAuditLog } from '$lib/server/audit';
+import { writeAuditLog, SESSION_DURATION_MS } from '$lib/server/audit';
 import { resolvePermissions } from '$lib/server/permissions';
 import { isLocalAdminUsername, verifyLocalAdminPassword } from '$lib/server/localAdmin';
 import type { SessionUser } from '$lib/types';
@@ -58,7 +58,7 @@ export const actions: Actions = {
                 groups: [],
                 authSource: 'local',
                 createdAt: Date.now(),
-                exp: Date.now() + (1000 * 60 * 60 * 8) // 8 hours
+                exp: Date.now() + SESSION_DURATION_MS
             };
 
             issueSession(cookies, sessionData);
@@ -67,6 +67,7 @@ export const actions: Actions = {
                 actor: username,
                 action: 'login',
                 targetSam: username,
+                targetDn: 'local:admin',
                 success: true,
                 details: { authSource: 'local' }
             });
@@ -105,7 +106,7 @@ export const actions: Actions = {
             groups: ldapUser.groups,
             authSource: 'ldap',
             createdAt: Date.now(),
-            exp: Date.now() + (1000 * 60 * 60 * 8) // 8 hours
+            exp: Date.now() + SESSION_DURATION_MS
         };
 
         // Access comes entirely from an explicit role assignment granted via

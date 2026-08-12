@@ -338,6 +338,20 @@
                 already imported is safe — matching events are updated in place, not duplicated, so it's fine
                 to re-run an import if you're not sure whether a file was already loaded.
             </p>
+            <h3>Cleaning up old entries</h3>
+            <p>
+                Imported event logs can grow into the millions of rows fast — especially Security logs — and
+                nothing is deleted automatically. On the same Import page, the <strong>Cleanup</strong> section
+                lets you permanently delete entries older than a chosen number of days, optionally limited to
+                one log type. Always <strong>Preview</strong> first — it shows exactly how many entries match
+                and their date range before anything is deleted, and deleting cannot be undone.
+            </p>
+            <div class="not-prose alert alert-info text-sm">
+                <span>
+                    Worth doing periodically rather than letting imports accumulate indefinitely — a very large
+                    <code>event_logs</code> table can eventually fill the database server's disk.
+                </span>
+            </div>
         </section>
 
         <!-- AUDIT LOGS -->
