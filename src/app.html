@@ -1,8 +1,27 @@
 <!doctype html>
-<html lang="en" data-theme="synthwave">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// Sets data-theme before first paint so there's no flash of the
+			// default theme before the saved one applies. Kept intentionally
+			// dependency-free and in sync with $lib/stores/theme.svelte.ts's
+			// THEMES list/storage key by hand, since this has to run before
+			// any app code loads.
+			(function () {
+				var THEMES = ['silk', 'nord', 'caramellatte', 'aqua', 'retro', 'forest'];
+				try {
+					var saved = localStorage.getItem('theme');
+					document.documentElement.setAttribute(
+						'data-theme',
+						THEMES.indexOf(saved) !== -1 ? saved : 'silk'
+					);
+				} catch (e) {
+					document.documentElement.setAttribute('data-theme', 'silk');
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

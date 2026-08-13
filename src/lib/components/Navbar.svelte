@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, ScrollText, Menu, HelpCircle, Settings } from 'lucide-svelte';
+  import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
   let { username, capabilities }: { username: string; capabilities: string[] } = $props();
 
@@ -74,6 +75,8 @@
   </div>
 
   <div class="flex-none gap-1">
+    <ThemeSwitcher />
+
     <a href="/help" class="btn btn-ghost btn-square" class:menu-active={isActive('/help')} aria-label="Help">
       <HelpCircle size={20} />
     </a>
