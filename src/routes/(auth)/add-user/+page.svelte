@@ -173,6 +173,7 @@
             middle initial + surname (John Mark Doe → jmdoe). If that's also taken,
             firstname.lastname (john.doe).
         </p>
+        <a href="/add-user/bulk" class="link link-hover text-sm">Need to add several users at once? Bulk import from CSV →</a>
     </div>
 
     <div class="card bg-base-100 shadow">

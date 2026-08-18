@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { ShieldCheck, Users, KeyRound, ArrowRight, Activity } from 'lucide-svelte';
+    import { ShieldCheck, Users, KeyRound, ArrowRight, Activity, HeartPulse } from 'lucide-svelte';
 </script>
 
 <svelte:head>
@@ -19,6 +19,22 @@
     </div>
 
     <div class="grid sm:grid-cols-2 gap-4">
+        <a href="/admin/health" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+            <div class="card-body gap-2">
+                <div class="w-fit p-2.5 rounded-lg bg-error/10 text-error">
+                    <HeartPulse size={20} />
+                </div>
+                <h3 class="font-semibold">System Health</h3>
+                <p class="text-sm text-base-content/60">
+                    Database and Active Directory connectivity, table sizes, and last import.
+                </p>
+                <div class="flex items-center gap-1 text-sm font-medium text-primary pt-1">
+                    Open
+                    <ArrowRight size={14} />
+                </div>
+            </div>
+        </a>
+
         <a href="/admin/sessions" class="card bg-base-100 shadow hover:shadow-md transition-shadow">
             <div class="card-body gap-2">
                 <div class="w-fit p-2.5 rounded-lg bg-accent/10 text-accent">

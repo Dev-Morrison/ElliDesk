@@ -14,9 +14,10 @@
         Trash2,
         ChevronLeft,
         ChevronRight,
-        FolderTree
+        FolderTree,
+        Download
     } from 'lucide-svelte';
-    import { extractErrorMessage } from '$lib/index';
+    import { extractErrorMessage, downloadCsv } from '$lib/index';
     import { showNotice } from '$lib/stores/notice.svelte';
 
     // Expected shape from +page.server.ts:
@@ -121,6 +122,23 @@
         } finally {
             refreshing = false;
         }
+    }
+
+    function exportCsv() {
+        downloadCsv(
+            'elidesk-groups.csv',
+            ['Name', 'Username', 'Description', 'Category', 'Scope', 'OU', 'Members', 'Managed By'],
+            filtered.map((g) => [
+                g.cn,
+                g.sAMAccountName,
+                g.description ?? '',
+                g.category,
+                g.scope,
+                g.ou,
+                g.memberCount,
+                g.managedBy ?? ''
+            ])
+        );
     }
 
     function toggleMenu(sAMAccountName: string) {
@@ -290,6 +308,11 @@
                 >
                     <RefreshCw size={18} class={refreshing ? 'animate-spin' : ''} />
                     Refresh
+                </button>
+
+                <button class="btn btn-ghost" onclick={exportCsv} disabled={filtered.length === 0}>
+                    <Download size={18} />
+                    Export CSV
                 </button>
 
             </div>

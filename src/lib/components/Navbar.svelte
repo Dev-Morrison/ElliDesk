@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, ScrollText, Menu, HelpCircle, Settings, LogOut } from 'lucide-svelte';
   import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+  import GlobalSearch from '$lib/components/GlobalSearch.svelte';
 
   let { username, capabilities }: { username: string; capabilities: string[] } = $props();
 
@@ -75,6 +76,8 @@
   </div>
 
   <div class="flex-none gap-1">
+    <GlobalSearch />
+
     <ThemeSwitcher />
 
     <a href="/help" class="btn btn-ghost btn-square" class:menu-active={isActive('/help')} aria-label="Help">

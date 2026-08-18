@@ -1,3 +1,10 @@
+export interface SearchResultItem {
+    type: 'user' | 'group' | 'computer';
+    title: string;
+    subtitle: string;
+    href: string;
+}
+
 export interface SessionUser {
     username: string;
     email: string;

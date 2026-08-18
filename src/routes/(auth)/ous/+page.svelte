@@ -1,8 +1,9 @@
 <script lang="ts">
     import type { PageProps } from './$types';
-    import { FolderKanban, AlertTriangle } from 'lucide-svelte';
+    import { FolderKanban, AlertTriangle, Download } from 'lucide-svelte';
     import OuTreeNode from '$lib/components/OuTreeNode.svelte';
     import type { ADUser, OuNode } from '$lib/types';
+    import { downloadCsv } from '$lib/index';
 
     let { data }: PageProps = $props();
 
@@ -63,6 +64,22 @@
         } finally {
             loadingMembers = false;
         }
+    }
+
+    function exportMembersCsv() {
+        if (!selectedOu) return;
+
+        downloadCsv(
+            `elidesk-ou-${selectedOu.name}.csv`,
+            ['Name', 'Username', 'Email', 'Status', 'Locked'],
+            members.map((u) => [
+                u.displayName,
+                u.sAMAccountName,
+                u.mail ?? '',
+                u.enabled ? 'Enabled' : 'Disabled',
+                u.locked ? 'Locked' : ''
+            ])
+        );
     }
 </script>
 
@@ -133,15 +150,27 @@
                                 <p class="text-xs text-base-content/50 font-mono truncate">{selectedOu.dn}</p>
                             </div>
 
-                            <label class="label cursor-pointer gap-2 shrink-0">
-                                <span class="label-text text-sm">Include sub-OUs</span>
-                                <input
-                                    type="checkbox"
-                                    class="toggle toggle-sm"
-                                    bind:checked={includeSubOUs}
-                                    onchange={loadMembers}
-                                />
-                            </label>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <label class="label cursor-pointer gap-2">
+                                    <span class="label-text text-sm">Include sub-OUs</span>
+                                    <input
+                                        type="checkbox"
+                                        class="toggle toggle-sm"
+                                        bind:checked={includeSubOUs}
+                                        onchange={loadMembers}
+                                    />
+                                </label>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost btn-sm"
+                                    onclick={exportMembersCsv}
+                                    disabled={members.length === 0}
+                                >
+                                    <Download size={14} />
+                                    Export CSV
+                                </button>
+                            </div>
                         </div>
 
                         {#if membersError}

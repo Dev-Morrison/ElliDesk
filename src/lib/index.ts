@@ -52,6 +52,39 @@ export async function extractErrorMessage(
     return fallback;
 }
 
+// Quotes a single CSV field per RFC 4180 - always quoted (simpler and safe
+// rather than only quoting when "necessary") with embedded quotes doubled.
+function csvField(value: unknown): string {
+    const str = value === null || value === undefined ? '' : String(value);
+    return `"${str.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Builds a CSV from an array of row objects and triggers a browser download
+ * — entirely client-side, no server round-trip, since the data driving
+ * these exports (group/OU lists, bulk-import results) is already loaded on
+ * the page by the time an Export button is clicked.
+ */
+export function downloadCsv(filename: string, headers: string[], rows: (string | number | null | undefined)[][]): void {
+    const lines = [headers.map(csvField).join(',')];
+    for (const row of rows) {
+        lines.push(row.map(csvField).join(','));
+    }
+
+    // Leading BOM so Excel (still the primary consumer of these files)
+    // reliably detects UTF-8 instead of guessing a legacy codepage.
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
 export function fileTimeToDate(fileTime?: string | number) :Date | null {
     if (!fileTime) return null;
 

@@ -2,6 +2,7 @@
     import type { ADComputer } from '$lib/types';
     import { fileTimeToDate, extractErrorMessage } from '$lib/index';
     import { invalidateAll } from '$app/navigation';
+    import { page } from '$app/state';
     import { Monitor, MonitorCheck, MonitorX, MonitorOff, X } from 'lucide-svelte';
     import { showNotice } from '$lib/stores/notice.svelte';
 
@@ -11,7 +12,8 @@
         (data.permissions.capabilities as string[]).includes('computers.manage')
     );
 
-    let search = $state('');
+    // Pre-filled when arriving from global search (/computers?search=NAME).
+    let search = $state(page.url.searchParams.get('search') ?? '');
     let statusFilter = $state<'all' | 'enabled' | 'disabled'>('all');
     let osFilter = $state('all');
     let ouFilter = $state('all');

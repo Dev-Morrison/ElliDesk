@@ -15,12 +15,14 @@
         ShieldCheck,
         ScrollText,
         FileClock,
-        Mail
+        Mail,
+        Search
     } from 'lucide-svelte';
 
     const sections = [
         { id: 'getting-started', label: 'Getting Started', icon: Rocket },
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'search', label: 'Global Search', icon: Search },
         { id: 'all-users', label: 'Managing Users', icon: Users },
         { id: 'add-user', label: 'Adding a New User', icon: UserPlus },
         { id: 'groups', label: 'Groups', icon: Shield },
@@ -124,6 +126,22 @@
             </p>
         </section>
 
+        <!-- GLOBAL SEARCH -->
+        <section id="search">
+            <h2>Global Search</h2>
+            <p>
+                Click the search icon in the top navigation bar (or press <kbd class="kbd kbd-sm">Ctrl</kbd> +
+                <kbd class="kbd kbd-sm">K</kbd>, or <kbd class="kbd kbd-sm">⌘</kbd> +
+                <kbd class="kbd kbd-sm">K</kbd> on a Mac) to search users, groups, and computers from
+                anywhere in the app without navigating to their page first. Type at least two characters and
+                results appear grouped by type — click one to go straight there.
+            </p>
+            <p class="text-sm text-base-content/60">
+                Results only ever include what you have permission to see, and are scoped to your domain(s)
+                the same way the list pages are.
+            </p>
+        </section>
+
         <!-- ALL USERS -->
         <section id="all-users">
             <h2>Managing Users</h2>
@@ -190,6 +208,17 @@
                 If your account is limited to specific domains, the Domain dropdown here only offers the
                 domain(s) you're allowed to create users in.
             </p>
+            <h3>Bulk Add Users</h3>
+            <p>
+                For onboarding several people at once, use <strong>Bulk Add Users</strong> (linked from the
+                Add New User page) instead of creating accounts one at a time. Download the CSV template,
+                fill in a row per person, and leave the Username column blank to have it auto-generated the
+                same way the single-add page's Generate button works. Click <strong>Preview</strong> first —
+                it validates every row (including catching two people who'd otherwise generate the same
+                username) and shows exactly what will happen before anything is created. Rows with errors are
+                skipped automatically; valid rows are created the same way as a single Add New User (disabled,
+                no password, until you reset one).
+            </p>
         </section>
 
         <!-- GROUPS -->
@@ -206,6 +235,11 @@
                 AD), <strong>Edit</strong> (description, email, and manager), and <strong>Delete</strong>.
                 View-only accounts only see View Group.
             </p>
+            <p>
+                <strong>Export CSV</strong> downloads whatever the current search/filters are showing — handy
+                for a point-in-time record of group membership counts, or sharing a list without giving
+                someone access to the console.
+            </p>
         </section>
 
         <!-- OUS -->
@@ -217,7 +251,8 @@
                 each OU includes everyone in its sub-OUs, so you can see where people actually are at a glance.
                 Toggle <strong>Include sub-OUs</strong> to see everyone underneath a branch, not just users
                 directly in that one folder. Use the filter box at the top of the tree to jump straight to an
-                OU by name.
+                OU by name. Once you've selected an OU, <strong>Export CSV</strong> downloads the member list
+                currently shown on the right.
             </p>
         </section>
 
