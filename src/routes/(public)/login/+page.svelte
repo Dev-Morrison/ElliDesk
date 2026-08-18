@@ -132,11 +132,13 @@
                         return ({ result }) => {
                             formProcessing = false;
                             if (result.type === 'failure') {
-                                if (result.status === 401 && result.data?.error) {
-                                    errorText = result.data.error as string;
-                                } else {
-                                    errorText = 'An unexpected error occurred. Please try again.';
-                                }
+                                // Every fail() the login action returns (401,
+                                // 403, 429, 500) includes a real message —
+                                // status-specific handling here was silently
+                                // dropping all but 401's.
+                                errorText =
+                                    (result.data?.error as string | undefined) ??
+                                    'An unexpected error occurred. Please try again.';
                             } else if (result.type === 'success') {
                                 goto('/dashboard');
                             }

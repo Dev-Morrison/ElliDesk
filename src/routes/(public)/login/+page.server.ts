@@ -7,6 +7,7 @@ import { ldapAuthenticate } from '$lib/ldap';
 import { writeAuditLog, SESSION_DURATION_MS } from '$lib/server/audit';
 import { resolvePermissions } from '$lib/server/permissions';
 import { isLocalAdminUsername, verifyLocalAdminPassword } from '$lib/server/localAdmin';
+import { checkRateLimit, recordLoginFailure, recordLoginSuccess, formatRetryAfter } from '$lib/server/rateLimiter';
 import type { SessionUser } from '$lib/types';
 
 function sign(data: string) {
@@ -28,7 +29,22 @@ function issueSession(cookies: Cookies, sessionData: SessionUser & { exp: number
 }
 
 export const actions: Actions = {
-    default: async ({ request, cookies }) => {
+    default: async ({ request, cookies, getClientAddress }) => {
+
+        const clientIp = getClientAddress();
+
+        // Applies to both the local admin and LDAP paths below - AD accounts
+        // already get AD's own lockout policy, but the local break-glass
+        // admin has no lockout of its own otherwise, and the app is also a
+        // convenient proxy for hammering real LDAP binds. Checked before
+        // touching either auth path, and before parsing the form, so a
+        // blocked caller can't learn anything from timing either.
+        const rateLimit = checkRateLimit(clientIp);
+        if (rateLimit.limited) {
+            return fail(429, {
+                error: `Too many failed sign-in attempts. Try again in ${formatRetryAfter(rateLimit.retryAfterMs ?? 0)}.`
+            });
+        }
 
         const formData = await request.formData();
         const username = formData.get('username')?.toString() ?? '';
@@ -39,6 +55,8 @@ export const actions: Actions = {
         // sAMAccountName there.
         if (isLocalAdminUsername(username)) {
             if (!verifyLocalAdminPassword(password)) {
+                recordLoginFailure(clientIp);
+
                 await writeAuditLog({
                     actor: username,
                     action: 'login-failed',
@@ -49,6 +67,8 @@ export const actions: Actions = {
 
                 return fail(401, { error: 'Invalid username or password.' });
             }
+
+            recordLoginSuccess(clientIp);
 
             const sessionData: SessionUser & { exp: number } = {
                 username,
@@ -78,6 +98,8 @@ export const actions: Actions = {
         const ldapUser = await ldapAuthenticate(username, password);
 
         if (ldapUser?.error) {
+            recordLoginFailure(clientIp);
+
             await writeAuditLog({
                 actor: username,
                 action: 'login-failed',
@@ -96,6 +118,13 @@ export const actions: Actions = {
         if (!ldapUser.dn || !ldapUser.name || !ldapUser.email) {
             return fail(500, { error: 'Unexpected authentication response.' });
         }
+
+        // Credentials are valid from here on, regardless of whether the
+        // account turns out to be authorized below - that's not a
+        // credential-guessing failure, so it shouldn't count against the
+        // throttle (and a correct password should clear out any earlier
+        // typos rather than leave them counted against the caller).
+        recordLoginSuccess(clientIp);
 
         // Build session payload
         const sessionData: SessionUser & { exp: number } = {

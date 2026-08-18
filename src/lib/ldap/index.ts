@@ -1,7 +1,7 @@
 import { Change, type SearchOptions, Attribute } from 'ldapts';
 import type { LdapAddUserParams } from '$lib/types';
 import { env } from '$env/dynamic/private';
-import { escapeLdapFilter, withLdapClient, searchDN, toArray, toSingle } from '$lib/server/ldap';
+import { escapeLdapFilter, withLdapClient, searchDN, toArray, toSingle, ACCOUNTDISABLE } from '$lib/server/ldap';
 
 export async function ldapAuthenticate(username: string, password: string) {
     try {
@@ -14,7 +14,15 @@ export async function ldapAuthenticate(username: string, password: string) {
             // covers both ICT-OU staff and anyone else with a role assignment.
             const { searchEntries } = await client.search(searchDN(), {
                 filter: `(sAMAccountName=${escapeLdapFilter(username)})`,
-                attributes: ['sAMAccountName', 'userPrincipalName', 'name', 'memberOf', 'distinguishedName']
+                attributes: [
+                    'sAMAccountName',
+                    'userPrincipalName',
+                    'name',
+                    'memberOf',
+                    'distinguishedName',
+                    'userAccountControl',
+                    'lockoutTime'
+                ]
             });
 
             if (searchEntries.length === 0) {
@@ -25,6 +33,38 @@ export async function ldapAuthenticate(username: string, password: string) {
                     dn: null,
                     groups: [] as string[],
                     error: 'User not found'
+                };
+            }
+
+            const entry = searchEntries[0];
+
+            // Checked before attempting the bind - both of these would make
+            // AD reject the bind anyway (with the same generic error either
+            // way), but checking first gives an accurate, specific message
+            // instead of guessing from a failed-bind error string, and
+            // avoids bothering AD with a bind it's certain to refuse.
+            const uac = Number(toSingle(entry.userAccountControl) ?? 0);
+            const lockoutTime = Number(toSingle(entry.lockoutTime) ?? 0);
+
+            if ((uac & ACCOUNTDISABLE) !== 0) {
+                return {
+                    username: null,
+                    email: null,
+                    name: null,
+                    dn: null,
+                    groups: [] as string[],
+                    error: 'This account is disabled. Contact your administrator.'
+                };
+            }
+
+            if (lockoutTime > 0) {
+                return {
+                    username: null,
+                    email: null,
+                    name: null,
+                    dn: null,
+                    groups: [] as string[],
+                    error: 'This account is locked out. Contact your administrator to unlock it.'
                 };
             }
 
