@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, ScrollText, Menu, HelpCircle, Settings } from 'lucide-svelte';
+  import { LayoutDashboard, Users, Shield, FolderKanban, Monitor, Wrench, FileClock, ScrollText, Menu, HelpCircle, Settings, LogOut } from 'lucide-svelte';
   import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
   let { username, capabilities }: { username: string; capabilities: string[] } = $props();
@@ -85,8 +85,13 @@
       <li>
         <details>
           <summary class="font-bold">BOS\{username}</summary>
-          <ul class="bg-base-300 rounded-t-none p-2 w-full">
-            <li><a href="/logout" data-sveltekit-reload>Logout</a></li>
+          <ul class="shadow bg-base-200 rounded-t-none p-2 w-full">
+            <li>
+              <a href="/logout" data-sveltekit-reload class="text-error btw">
+                <LogOut size={16} />
+                Logout
+              </a>
+            </li>
           </ul>
         </details>
       </li>

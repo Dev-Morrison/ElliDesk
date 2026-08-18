@@ -5,7 +5,16 @@
 // store just picks up whatever that script already applied and gives the
 // UI a reactive way to change it afterward.
 
-export const THEMES = ['silk', 'nord', 'caramellatte', 'aqua', 'retro', 'forest'] as const;
+// Every daisyUI v5 built-in theme, in daisyUI's own canonical order (the
+// order they're declared in when you register all of them) - kept in sync
+// with the `themes:` list in src/routes/layout.css and the no-FOUC script
+// in app.html, which both need the exact same set.
+export const THEMES = [
+    'light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro',
+    'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy',
+    'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade',
+    'night', 'coffee', 'winter', 'dim', 'nord', 'sunset', 'caramellatte', 'abyss', 'silk'
+] as const;
 export type ThemeName = (typeof THEMES)[number];
 
 const DEFAULT_THEME: ThemeName = 'silk';

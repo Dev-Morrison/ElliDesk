@@ -306,7 +306,11 @@
 
                     <tr>
 
-                        <td>{user.displayName}</td>
+                        <td>
+                            <a href={`/users/${user.sAMAccountName}`} class="font-semibold link link-hover">
+                                {user.displayName}
+                            </a>
+                        </td>
 
                         <td>{user.sAMAccountName}</td>
 
