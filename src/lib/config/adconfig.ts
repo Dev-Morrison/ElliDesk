@@ -29,6 +29,13 @@ export const AD_CONFIG = {
           ]
         },
 
+        PROCUREMENT: {
+          ou: `OU=PROCUREMENT,${EntityBSJ},${DomainDN}`,
+          groups: [AllStaffGroup,
+            `CN=Procurement Unit,OU=Security Groups,OU=GROUPS,${EntityBSJ},${DomainDN}`
+          ]
+        },
+
         HR: {
           ou: `OU=HUMAN RESOURCES BRANCH,${EntityBSJ},${DomainDN}`,
           groups: [AllStaffGroup]

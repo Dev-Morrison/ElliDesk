@@ -34,7 +34,7 @@
     // everywhere (dropdown + department options) with no other changes.
     const DEPARTMENTS_BY_DOMAIN: Record<string, string[]> = {
         'bsj.org.jm': [
-            'ICT', 'FINANCE', 'HR', 'QEMS', 'OFMB',
+            'ICT', 'FINANCE','PROCUREMENT', 'HR', 'QEMS', 'OFMB',
             'OFMB_FACILITIES_ADMINISTRATION', 'OFMB_PROPERTY_AND_PROJECTS',
             'CCSB', 'CUSTOMER_SERVICE', 'STANDARDS', 'TRAINING',
             'LEGAL_OFFICE', 'INTERNAL_AUDIT', 'EXECUTIVE_OFFICE',
@@ -325,7 +325,7 @@
                         name="userPrincipalName"
                         required
                         class="input input-bordered w-full"
-                        placeholder="jdoe@bsj.org.jm"
+                        placeholder="example@bsj.org.jm"
                     >
                 </div>
 
